@@ -1,0 +1,24 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Your Popcorn Cubes</h1>
+  <a class="btn btn-primary" href="{% url 'cube-create' %}">Create cube</a>
+</div>
+
+{% if cubes %}
+  <div class="list-group">
+    {% for cube in cubes %}
+      <a class="list-group-item list-group-item-action" href="{% url 'cube-detail' cube.pk %}">
+        <div class="d-flex w-100 justify-content-between">
+          <h2 class="h6 mb-1">{{ cube.name }}</h2>
+          <small>Round {{ cube.current_round }}</small>
+        </div>
+        <small>{{ cube.cards_submitted }}/{{ cube.effective_max_cards }} cards submitted</small>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>You are not in any cubes yet.</p>
+{% endif %}
+{% endblock %}

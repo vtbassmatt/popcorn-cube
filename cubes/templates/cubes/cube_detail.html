@@ -1,0 +1,36 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<h1 class="h3">{{ cube.name }}</h1>
+<p class="text-muted">Round {{ current_round }} · {{ cube.cards_submitted }}/{{ cube.effective_max_cards }} cards</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card card-body"><strong>Participants</strong><span>{{ cube.participant_count }}</span></div></div>
+  <div class="col-md-4"><div class="card card-body"><strong>Format</strong><span>{% if cube.format_legality %}{{ cube.get_format_legality_display }}{% else %}Any{% endif %}</span></div></div>
+  <div class="col-md-4"><div class="card card-body"><strong>Max copies per card</strong><span>{% if cube.max_count_per_card == 0 %}Unlimited{% else %}{{ cube.max_count_per_card }}{% endif %}</span></div></div>
+</div>
+
+{% if current_round > 1 %}
+  <h2 class="h5">Previous round cards from other players</h2>
+  {% if previous_round_cards %}
+    <ul class="list-group mb-4">
+      {% for submission in previous_round_cards %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ submission.card_name }}</span>
+          <small class="text-muted">{{ submission.player.username }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No cards from other players in the previous round yet.</p>
+  {% endif %}
+{% endif %}
+
+{% if can_submit %}
+  <a class="btn btn-success" href="{% url 'cube-submit' cube.pk %}">Submit card for round {{ current_round }}</a>
+{% elif already_submitted %}
+  <div class="alert alert-info">You already submitted a card this round.</div>
+{% else %}
+  <div class="alert alert-secondary">This cube has reached its card limit.</div>
+{% endif %}
+{% endblock %}
