@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class CubesConfig(AppConfig):
-    name = 'cubes'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "cubes"
