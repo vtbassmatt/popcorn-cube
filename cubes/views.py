@@ -31,6 +31,7 @@ class CubeCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
         selected_participants = form.cleaned_data["participants"]
         self.object.participants.add(self.request.user, *selected_participants)
