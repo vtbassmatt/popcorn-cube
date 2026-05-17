@@ -26,14 +26,20 @@ class SubmissionForm(forms.ModelForm):
     class Meta:
         model = Submission
         fields = ["card_name", "related_to"]
+        widgets = {"related_to": forms.TextInput()}
 
     def __init__(self, *args, cube: Cube, player, **kwargs):
         super().__init__(*args, **kwargs)
         self.cube = cube
         self.player = player
         self.card_data = None
+        self.fields["related_to"].required = False
+        self.fields["related_to"].label = "Reason (optional)"
+        self.fields["related_to"].help_text = "Optional: how this card connects to one or more cards."
         if cube.current_round > 1:
-            self.fields["related_to"].help_text = "How this card connects to one or more cards from last round."
+            self.fields["related_to"].help_text = (
+                "Optional: how this card connects to one or more cards from last round."
+            )
 
     def clean_card_name(self) -> str:
         card_name = self.cleaned_data["card_name"].strip()

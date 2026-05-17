@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -104,3 +106,9 @@ class Submission(models.Model):
 
     def __str__(self) -> str:
         return f"{self.cube.name} R{self.round_number}: {self.card_name}"
+
+    @property
+    def scryfall_url(self) -> str:
+        if self.scryfall_id:
+            return f"https://scryfall.com/card/{self.scryfall_id}"
+        return f'https://scryfall.com/search?q=%21%22{quote(self.card_name)}%22'

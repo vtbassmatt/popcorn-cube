@@ -16,7 +16,7 @@
     <ul class="list-group mb-4">
       {% for submission in previous_round_cards %}
         <li class="list-group-item d-flex justify-content-between">
-          <span>{{ submission.card_name }}</span>
+          <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
           <small class="text-muted">{{ submission.player.username }}</small>
         </li>
       {% endfor %}

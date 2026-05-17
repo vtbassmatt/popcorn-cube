@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 
 from .forms import SubmissionForm
 from .models import Cube, Submission
@@ -88,3 +89,46 @@ class SubmissionRuleTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("not legal", form.errors["card_name"][0])
+
+
+class SubmissionFormDisplayTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.cube = Cube.objects.create(name="Form Cube", owner=self.owner, max_cards=6)
+
+    def test_related_to_is_optional_text_input(self):
+        form = SubmissionForm(cube=self.cube, player=self.owner)
+
+        self.assertFalse(form.fields["related_to"].required)
+        self.assertEqual(form.fields["related_to"].label, "Reason (optional)")
+        self.assertEqual(form.fields["related_to"].widget.__class__.__name__, "TextInput")
+
+
+class CubeDetailViewTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.other = User.objects.create_user(username="other", password="pass")
+        self.cube = Cube.objects.create(name="View Cube", owner=self.owner, max_cards=6)
+        self.cube.participants.add(self.other)
+
+    def test_previous_round_cards_include_scryfall_links(self):
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Lightning Bolt",
+            scryfall_id="1234-abcd",
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Counterspell",
+            scryfall_id="5678-efgh",
+        )
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertContains(response, 'href="https://scryfall.com/card/5678-efgh"')
+        self.assertContains(response, 'target="_blank"')
