@@ -10,10 +10,11 @@ SCRYFALL_NAMED_URL = "https://api.scryfall.com/cards/named"
 def fetch_card_by_name(card_name: str) -> dict[str, Any] | None:
     query = urlencode({"exact": card_name.strip()})
     request = Request(f"{SCRYFALL_NAMED_URL}?{query}", headers={"User-Agent": "popcorn-cube/0.1"})
+    request.add_header("Accept", "application/json;q=0.9,*/*;q=0.8")
     try:
         with urlopen(request, timeout=10) as response:  # noqa: S310
             return json.loads(response.read().decode("utf-8"))
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as e:
         return None
 
 
