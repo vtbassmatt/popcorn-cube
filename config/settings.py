@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "runserveronhostname",
     "cubes",
 ]
 
@@ -68,6 +69,8 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+
+RUNSERVER_ON = 'cubes.localhost:8000'
 
 STATIC_URL = "static/"
 
