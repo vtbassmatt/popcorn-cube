@@ -51,6 +51,12 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return Cube.objects.filter(participants=self.request.user)
 
+    def _already_submitted(self, cube: Cube) -> bool:
+        return cube.submissions.filter(round_number=cube.current_round, player=self.request.user).exists()
+
+    def _can_submit(self, cube: Cube) -> bool:
+        return cube.is_open and not self._already_submitted(cube)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         cube: Cube = self.object
@@ -58,9 +64,9 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         previous_round_cards = cube.submissions.filter(round_number=current_round - 1).exclude(
             player=self.request.user
         )
-        already_submitted = cube.submissions.filter(round_number=current_round, player=self.request.user).exists()
-        can_submit = cube.is_open and not already_submitted
-        form = kwargs.get("form")
+        already_submitted = self._already_submitted(cube)
+        can_submit = self._can_submit(cube)
+        form = kwargs.get("form", None)
         if can_submit and form is None:
             form = SubmissionForm(cube=cube, player=self.request.user)
 
@@ -83,7 +89,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             messages.error(request, "This cube has reached its card limit.")
             return redirect("cube-detail", pk=cube.pk)
 
-        if cube.submissions.filter(round_number=cube.current_round, player=request.user).exists():
+        if self._already_submitted(cube):
             messages.info(request, "You have already submitted for this round.")
             return redirect("cube-detail", pk=cube.pk)
 
