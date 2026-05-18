@@ -59,16 +59,42 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             player=self.request.user
         )
         already_submitted = cube.submissions.filter(round_number=current_round, player=self.request.user).exists()
+        can_submit = cube.is_open and not already_submitted
+        form = kwargs.get("form")
+        if can_submit and form is None:
+            form = SubmissionForm(cube=cube, player=self.request.user)
 
         context.update(
             {
                 "current_round": current_round,
                 "previous_round_cards": previous_round_cards,
                 "already_submitted": already_submitted,
-                "can_submit": cube.is_open and not already_submitted,
+                "can_submit": can_submit,
+                "form": form,
             }
         )
         return context
+
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        self.object = self.get_object()
+        cube: Cube = self.object
+
+        if not cube.is_open:
+            messages.error(request, "This cube has reached its card limit.")
+            return redirect("cube-detail", pk=cube.pk)
+
+        if cube.submissions.filter(round_number=cube.current_round, player=request.user).exists():
+            messages.info(request, "You have already submitted for this round.")
+            return redirect("cube-detail", pk=cube.pk)
+
+        form = SubmissionForm(request.POST, cube=cube, player=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Card submitted.")
+            return redirect("cube-detail", pk=cube.pk)
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
 
 
 @login_required

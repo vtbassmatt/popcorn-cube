@@ -132,3 +132,29 @@ class CubeDetailViewTests(TestCase):
 
         self.assertContains(response, 'href="https://scryfall.com/card/5678-efgh"')
         self.assertContains(response, 'target="_blank"')
+
+    def test_detail_page_shows_inline_submission_form(self):
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Submit card for round 1')
+        self.assertContains(response, 'name="card_name"')
+        self.assertContains(response, 'name="related_to"')
+        self.assertNotContains(response, reverse("cube-submit", kwargs={"pk": self.cube.pk}))
+
+    @patch("cubes.forms.fetch_card_by_name")
+    def test_detail_page_post_submits_card(self, mock_fetch):
+        mock_fetch.return_value = {"id": "abc123", "name": "Opt", "legalities": {"modern": "legal"}}
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.post(
+            reverse("cube-detail", kwargs={"pk": self.cube.pk}),
+            {"card_name": "opt", "related_to": ""},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Submission.objects.filter(cube=self.cube, player=self.owner, card_name="Opt").exists())
+        self.assertContains(response, "Card submitted.")

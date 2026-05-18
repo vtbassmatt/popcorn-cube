@@ -27,7 +27,13 @@
 {% endif %}
 
 {% if can_submit %}
-  <a class="btn btn-success" href="{% url 'cube-submit' cube.pk %}">Submit card for round {{ current_round }}</a>
+  <form method="post" class="card card-body">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div>
+      <button class="btn btn-success" type="submit">Submit card for round {{ current_round }}</button>
+    </div>
+  </form>
 {% elif already_submitted %}
   <div class="alert alert-info">You already submitted a card this round.</div>
 {% else %}
