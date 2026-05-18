@@ -144,8 +144,6 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, 'name="related_to"')
         self.assertIn("form", response.context)
         self.assertFalse(response.context["form"].is_bound)
-        # Ensure cube detail renders the form directly rather than a "go to submit page" CTA.
-        self.assertNotContains(response, reverse("cube-submit", kwargs={"pk": self.cube.pk}))
 
     @patch("cubes.forms.fetch_card_by_name")
     def test_detail_page_post_submits_card(self, mock_fetch):

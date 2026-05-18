@@ -67,7 +67,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         already_submitted = self._already_submitted(cube)
         can_submit = self._can_submit(cube)
         # POST re-renders this view with a bound form on validation errors.
-        form = kwargs.pop("submission_form", None)
+        form = kwargs.get("form", None)
         if can_submit and form is None:
             form = SubmissionForm(cube=cube, player=self.request.user)
 
@@ -83,7 +83,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         return context
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Handle inline card submission and re-render this page with bound errors."""
+        """Handle inline card submission and re-render with bound errors when invalid."""
         self.object = self.get_object()
         cube: Cube = self.object
 
@@ -101,7 +101,8 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             messages.success(request, "Card submitted.")
             return redirect("cube-detail", pk=cube.pk)
 
-        context = self.get_context_data(submission_form=form)
+        # self.object is set above so DetailView context rendering can reuse the same cube.
+        context = self.get_context_data(form=form)
         return self.render_to_response(context)
 
 
