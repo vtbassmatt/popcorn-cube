@@ -83,7 +83,11 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         return context
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Handle inline card submission and re-render with bound errors when invalid."""
+        """Handle inline card submission.
+
+        Success and pre-submit state failures redirect with a flash message.
+        Validation errors re-render this page with a bound form.
+        """
         self.object = self.get_object()
         cube: Cube = self.object
 
@@ -101,7 +105,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             messages.success(request, "Card submitted.")
             return redirect("cube-detail", pk=cube.pk)
 
-        # self.object is set above so DetailView context rendering can reuse the same cube.
+        # self.object must be set so DetailView.get_context_data can access the current cube.
         context = self.get_context_data(form=form)
         return self.render_to_response(context)
 
