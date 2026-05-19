@@ -10,7 +10,7 @@
   <div class="col-md-4"><div class="card card-body"><strong>Max copies per card</strong><span>{% if cube.max_count_per_card == 0 %}Unlimited{% else %}{{ cube.max_count_per_card }}{% endif %}</span></div></div>
 </div>
 
-{% if current_round > 1 %}
+{% if current_round > 1 and cube.is_open %}
   <h2 class="h5">Previous round cards from other players</h2>
   {% if previous_round_cards %}
     <ul class="list-group mb-4">
@@ -40,7 +40,7 @@
   {% endif %}
 {% else %}
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h5 mb-0">Cube is complete</h2>
+    <h2 class="h5 mb-0">Cube is complete!</h2>
     <div class="btn-group" role="group" aria-label="Completed cube display mode">
       <a class="btn btn-sm {% if display_mode == 'table' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=table">Round table</a>
       <a class="btn btn-sm {% if display_mode == 'alphabetical' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=alphabetical">Alphabetical</a>
