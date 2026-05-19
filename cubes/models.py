@@ -102,6 +102,7 @@ class Submission(models.Model):
         if self.cube.max_count_per_card > 0:
             existing_count = submissions_without_self.filter(card_name__iexact=self.card_name).count()
             if existing_count >= self.cube.max_count_per_card:
+                # TODO: put this validation error on the specific field
                 raise ValidationError("This card has reached the max allowed copies in this cube.")
 
     def __str__(self) -> str:
