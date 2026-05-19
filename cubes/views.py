@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
 from .forms import CubeForm, SubmissionForm
-from .models import Cube
+from .models import Cube, Submission
 
 
 class CubeListView(LoginRequiredMixin, ListView):
@@ -51,8 +51,11 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return Cube.objects.filter(participants=self.request.user)
 
+    def _submission(self, cube: Cube):
+        return cube.submissions.filter(round_number=cube.current_round, player=self.request.user)
+
     def _already_submitted(self, cube: Cube) -> bool:
-        return cube.submissions.filter(round_number=cube.current_round, player=self.request.user).exists()
+        return self._submission(cube).exists()
 
     def _can_submit(self, cube: Cube) -> bool:
         return cube.is_open and not self._already_submitted(cube)
@@ -64,6 +67,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         previous_round_cards = cube.submissions.filter(round_number=current_round - 1).exclude(
             player=self.request.user
         )
+        submission = self._submission(cube).first()
         already_submitted = self._already_submitted(cube)
         can_submit = self._can_submit(cube)
         display_mode = "alphabetical" if self.request.GET.get("view") == "alphabetical" else "table"
@@ -101,6 +105,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             {
                 "current_round": current_round,
                 "previous_round_cards": previous_round_cards,
+                "submitted_card": submission,
                 "already_submitted": already_submitted,
                 "can_submit": can_submit,
                 "form": form,

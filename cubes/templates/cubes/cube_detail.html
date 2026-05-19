@@ -36,7 +36,7 @@
       </div>
     </form>
   {% elif already_submitted %}
-    <div class="alert alert-info">You already submitted a card this round.</div>
+    <div class="alert alert-info">You already submitted <a href="{{ submitted_card.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submitted_card.card_name }}</a> this round.</div>
   {% endif %}
 {% else %}
   <div class="d-flex justify-content-between align-items-center mb-3">
