@@ -8,7 +8,17 @@ from .scryfall import fetch_card_by_name, is_card_legal_for_format
 User = get_user_model()
 
 
-class CubeForm(forms.ModelForm):
+class Bs5ModelFormBase(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _, f in self.fields.items():
+            if 'class' in f.widget.attrs:
+                f.widget.attrs['class'] += " form-control"
+            else:
+                f.widget.attrs['class'] = "form-control"
+
+
+class CubeForm(Bs5ModelFormBase):
     participants = forms.ModelMultipleChoiceField(queryset=User.objects.none(), required=False)
 
     class Meta:
@@ -22,7 +32,7 @@ class CubeForm(forms.ModelForm):
         )
 
 
-class SubmissionForm(forms.ModelForm):
+class SubmissionForm(Bs5ModelFormBase):
     class Meta:
         model = Submission
         fields = ["card_name", "related_to"]
