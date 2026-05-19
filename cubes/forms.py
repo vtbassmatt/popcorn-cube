@@ -35,10 +35,10 @@ class SubmissionForm(forms.ModelForm):
         self.card_data = None
         self.fields["related_to"].required = False
         self.fields["related_to"].label = "Reason (optional)"
-        self.fields["related_to"].help_text = "Optional: how this card connects to one or more cards."
-        if cube.current_round > 1:
+        self.fields["related_to"].help_text = "How does this card connect to one or more cards from last round?"
+        if cube.current_round == 1:
             self.fields["related_to"].help_text = (
-                "Optional: how this card connects to one or more cards from last round."
+                "Why this card?"
             )
 
     def clean_card_name(self) -> str:
