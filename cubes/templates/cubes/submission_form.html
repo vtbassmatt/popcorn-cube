@@ -1,0 +1,15 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<h1 class="h3 mb-3">Submit card · {{ cube.name }}</h1>
+<p class="text-muted">Round {{ cube.current_round }}</p>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Submit card</button>
+    <a class="btn btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

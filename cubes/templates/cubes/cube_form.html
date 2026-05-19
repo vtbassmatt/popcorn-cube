@@ -1,0 +1,12 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<h1 class="h3 mb-3">Create Popcorn Cube</h1>
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Create cube</button>
+  </div>
+</form>
+{% endblock %}
