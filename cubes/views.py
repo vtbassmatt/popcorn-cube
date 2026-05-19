@@ -66,6 +66,32 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         )
         already_submitted = self._already_submitted(cube)
         can_submit = self._can_submit(cube)
+        display_mode = "alphabetical" if self.request.GET.get("view") == "alphabetical" else "table"
+        participants = list(cube.participants.order_by("username"))
+        complete_submissions = list(
+            cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
+        )
+        round_rows = []
+        alphabetical_submissions = []
+        if not cube.is_open:
+            submissions_by_round = {}
+            for submission in complete_submissions:
+                submissions_by_round.setdefault(submission.round_number, {})[submission.player_id] = submission
+            for round_number in sorted(submissions_by_round):
+                round_rows.append(
+                    {
+                        "round_number": round_number,
+                        "cards": [submissions_by_round[round_number].get(participant.pk) for participant in participants],
+                    }
+                )
+            alphabetical_submissions = sorted(
+                complete_submissions,
+                key=lambda submission: (
+                    submission.card_name.lower(),
+                    submission.player.username.lower(),
+                    submission.round_number,
+                ),
+            )
         # POST re-renders this view with a bound form on validation errors.
         form = kwargs.get("form", None)
         if can_submit and form is None:
@@ -78,6 +104,10 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                 "already_submitted": already_submitted,
                 "can_submit": can_submit,
                 "form": form,
+                "display_mode": display_mode,
+                "results_participants": participants,
+                "round_rows": round_rows,
+                "alphabetical_submissions": alphabetical_submissions,
             }
         )
         return context

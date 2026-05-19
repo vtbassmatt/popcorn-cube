@@ -159,3 +159,38 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(Submission.objects.filter(cube=self.cube, player=self.owner, card_name="Opt").exists())
         self.assertContains(response, "Card submitted.")
+
+    def test_full_cube_defaults_to_tabular_results_view(self):
+        closed_cube = Cube.objects.create(name="Closed Cube", owner=self.owner, max_cards=3)
+        closed_cube.participants.add(self.other)
+        Submission.objects.create(cube=closed_cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=closed_cube, player=self.other, round_number=1, card_name="Bolt")
+        Submission.objects.create(cube=closed_cube, player=self.owner, round_number=2, card_name="Doom Blade")
+        Submission.objects.create(cube=closed_cube, player=self.other, round_number=2, card_name="Counterspell")
+
+        self.client.login(username="owner", password="pass")
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": closed_cube.pk}))
+
+        self.assertContains(response, "Cube is complete")
+        self.assertContains(response, "Round 1")
+        self.assertContains(response, "Round 2")
+        self.assertContains(response, "owner")
+        self.assertContains(response, "other")
+        self.assertContains(response, "?view=alphabetical")
+        self.assertNotContains(response, 'name="card_name"')
+
+    def test_full_cube_can_be_viewed_alphabetically(self):
+        closed_cube = Cube.objects.create(name="Closed Cube", owner=self.owner, max_cards=3)
+        closed_cube.participants.add(self.other)
+        Submission.objects.create(cube=closed_cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=closed_cube, player=self.other, round_number=1, card_name="Bolt")
+        Submission.objects.create(cube=closed_cube, player=self.owner, round_number=2, card_name="Doom Blade")
+        Submission.objects.create(cube=closed_cube, player=self.other, round_number=2, card_name="Counterspell")
+
+        self.client.login(username="owner", password="pass")
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": closed_cube.pk}) + "?view=alphabetical")
+
+        self.assertEqual(response.context["display_mode"], "alphabetical")
+        alphabetical_names = [submission.card_name for submission in response.context["alphabetical_submissions"]]
+        self.assertEqual(alphabetical_names, ["Bolt", "Counterspell", "Doom Blade", "Opt"])
+        self.assertContains(response, "?view=table")
