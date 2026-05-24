@@ -16,7 +16,12 @@
     <ul class="list-group mb-4">
       {% for submission in previous_round_cards %}
         <li class="list-group-item d-flex justify-content-between">
-          <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+          <div>
+            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+            {% if submission.related_to %}
+              <div><small class="text-muted">{{ submission.related_to }}</small></div>
+            {% endif %}
+          </div>
           <small class="text-muted">{{ submission.player.username }}</small>
         </li>
       {% endfor %}
@@ -41,7 +46,12 @@
       <ul class="list-group mb-4">
         {% for submission in prior_submissions %}
           <li class="list-group-item d-flex justify-content-between">
-            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+            <div>
+              <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+              {% if submission.related_to %}
+                <div><small class="text-muted">{{ submission.related_to }}</small></div>
+              {% endif %}
+            </div>
             <small class="text-muted">Round {{ submission.round_number }}</small>
           </li>
         {% endfor %}
@@ -79,8 +89,13 @@
   {% if display_mode == "alphabetical" %}
     <ul class="list-group mb-4">
       {% for submission in alphabetical_submissions %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div>
+            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+            {% if submission.related_to %}
+              <div><small class="text-muted">{{ submission.related_to }}</small></div>
+            {% endif %}
+          </div>
           <small class="text-muted">{{ submission.player.username }} · Round {{ submission.round_number }}</small>
         </li>
       {% endfor %}
@@ -104,6 +119,9 @@
                 <td>
                   {% if submission %}
                     <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+                    {% if submission.related_to %}
+                      <div><small class="text-muted">{{ submission.related_to }}</small></div>
+                    {% endif %}
                   {% endif %}
                 </td>
               {% endfor %}

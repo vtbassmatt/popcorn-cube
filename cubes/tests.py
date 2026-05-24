@@ -125,6 +125,7 @@ class CubeDetailViewTests(TestCase):
             round_number=1,
             card_name="Counterspell",
             scryfall_id="5678-efgh",
+            related_to="Pairs with Lightning Bolt",
         )
         self.client.login(username="owner", password="pass")
 
@@ -132,6 +133,7 @@ class CubeDetailViewTests(TestCase):
 
         self.assertContains(response, 'href="https://scryfall.com/card/5678-efgh"')
         self.assertContains(response, 'target="_blank"')
+        self.assertContains(response, "Pairs with Lightning Bolt")
 
     def test_detail_page_shows_inline_submission_form(self):
         self.client.login(username="owner", password="pass")
@@ -159,7 +161,13 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(list(response.context["prior_submissions"]), [])
 
     def test_open_cube_can_show_prior_submissions_when_requested(self):
-        Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Opt",
+            related_to="Keeps options open",
+        )
         Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=2, card_name="Doom Blade")
         Submission.objects.create(cube=self.cube, player=self.other, round_number=2, card_name="Counterspell")
@@ -171,6 +179,7 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "Hide prior submissions")
         self.assertContains(response, "Opt")
         self.assertContains(response, "Doom Blade")
+        self.assertContains(response, "Keeps options open")
         prior_submission_names = [submission.card_name for submission in response.context["prior_submissions"]]
         self.assertEqual(prior_submission_names, ["Opt", "Doom Blade"])
 
@@ -207,7 +216,13 @@ class CubeDetailViewTests(TestCase):
         closed_cube = Cube.objects.create(name="Closed Cube", owner=self.owner, max_cards=3)
         closed_cube.participants.add(self.other)
         Submission.objects.create(cube=closed_cube, player=self.owner, round_number=1, card_name="Opt")
-        Submission.objects.create(cube=closed_cube, player=self.other, round_number=1, card_name="Bolt")
+        Submission.objects.create(
+            cube=closed_cube,
+            player=self.other,
+            round_number=1,
+            card_name="Bolt",
+            related_to="Fast interaction",
+        )
         Submission.objects.create(cube=closed_cube, player=self.owner, round_number=2, card_name="Doom Blade")
         Submission.objects.create(cube=closed_cube, player=self.other, round_number=2, card_name="Counterspell")
 
@@ -219,13 +234,20 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "Round 2")
         self.assertContains(response, "owner")
         self.assertContains(response, "other")
+        self.assertContains(response, "Fast interaction")
         self.assertContains(response, "?view=alphabetical")
         self.assertNotContains(response, 'name="card_name"')
 
     def test_full_cube_can_be_viewed_alphabetically(self):
         closed_cube = Cube.objects.create(name="Closed Cube", owner=self.owner, max_cards=3)
         closed_cube.participants.add(self.other)
-        Submission.objects.create(cube=closed_cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(
+            cube=closed_cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Opt",
+            related_to="Keeps options open",
+        )
         Submission.objects.create(cube=closed_cube, player=self.other, round_number=1, card_name="Bolt")
         Submission.objects.create(cube=closed_cube, player=self.owner, round_number=2, card_name="Doom Blade")
         Submission.objects.create(cube=closed_cube, player=self.other, round_number=2, card_name="Counterspell")
@@ -236,4 +258,5 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(response.context["display_mode"], "alphabetical")
         alphabetical_names = [submission.card_name for submission in response.context["alphabetical_submissions"]]
         self.assertEqual(alphabetical_names, ["Bolt", "Counterspell", "Doom Blade", "Opt"])
+        self.assertContains(response, "Keeps options open")
         self.assertContains(response, "?view=table")
