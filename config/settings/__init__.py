@@ -82,6 +82,7 @@ USE_TZ = True
 RUNSERVER_ON = 'cubes.localhost:8000'
 
 STATIC_URL = "static/"
+STATIC_ROOT = config('STATIC_DIR', default=BASE_DIR / '_static')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
