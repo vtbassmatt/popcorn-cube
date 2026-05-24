@@ -71,6 +71,26 @@ class SubmissionRuleTests(TestCase):
         with self.assertRaises(ValidationError):
             second.full_clean()
 
+    def test_edit_submission_from_prior_round_is_allowed(self):
+        earlier_submission = Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="A")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="B")
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=2, card_name="C")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=2, card_name="D")
+        self.assertEqual(self.cube.current_round, 3)
+
+        earlier_submission.card_name = "E"
+        earlier_submission.full_clean()
+
+    def test_edit_submission_in_closed_cube_is_allowed_when_round_unchanged(self):
+        latest_submission = Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="A")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="B")
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=2, card_name="C")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=2, card_name="D")
+        self.assertFalse(self.cube.is_open)
+
+        latest_submission.card_name = "E"
+        latest_submission.full_clean()
+
     @patch("cubes.forms.fetch_card_by_name")
     def test_submission_form_enforces_format_legality(self, mock_fetch):
         self.cube.format_legality = "modern"
