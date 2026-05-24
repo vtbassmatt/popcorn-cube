@@ -145,6 +145,35 @@ class CubeDetailViewTests(TestCase):
         self.assertIn("form", response.context)
         self.assertFalse(response.context["form"].is_bound)
 
+    def test_open_cube_hides_prior_submissions_by_default(self):
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertContains(response, "Show my prior submissions")
+        self.assertNotContains(response, "My prior submissions")
+        self.assertNotContains(response, "Hide prior submissions")
+        self.assertFalse(response.context["show_prior_submissions"])
+        self.assertEqual(list(response.context["prior_submissions"]), [])
+
+    def test_open_cube_can_show_prior_submissions_when_requested(self):
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=2, card_name="Doom Blade")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=2, card_name="Counterspell")
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}) + "?show_prior_submissions=1")
+
+        self.assertContains(response, "My prior submissions")
+        self.assertContains(response, "Hide prior submissions")
+        self.assertContains(response, "Opt")
+        self.assertContains(response, "Doom Blade")
+        prior_submission_names = [submission.card_name for submission in response.context["prior_submissions"]]
+        self.assertEqual(prior_submission_names, ["Opt", "Doom Blade"])
+
     @patch("cubes.forms.fetch_card_by_name")
     def test_detail_page_post_submits_card(self, mock_fetch):
         mock_fetch.return_value = {"id": "abc123", "name": "Opt", "legalities": {"modern": "legal"}}
