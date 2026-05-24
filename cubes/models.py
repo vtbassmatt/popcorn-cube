@@ -88,15 +88,24 @@ class Submission(models.Model):
         ordering = ["created_at"]
 
     def clean(self) -> None:
+        existing_submission = None
+        if self.pk:
+            existing_submission = Submission.objects.filter(pk=self.pk).only("cube_id", "round_number").first()
+        is_round_unchanged_edit = (
+            existing_submission is not None
+            and existing_submission.cube_id == self.cube_id
+            and existing_submission.round_number == self.round_number
+        )
+
         if not self.cube.participants.filter(pk=self.player_id).exists():
             raise ValidationError("Only cube participants can submit cards.")
 
-        if not self.cube.is_open:
+        if not self.cube.is_open and not is_round_unchanged_edit:
             raise ValidationError("This cube has reached its card limit.")
 
         submissions_without_self = self.cube.submissions.exclude(pk=self.pk)
         expected_round = (submissions_without_self.count() // max(self.cube.participant_count, 1)) + 1
-        if self.round_number != expected_round:
+        if self.round_number != expected_round and not is_round_unchanged_edit:
             raise ValidationError("Submission does not match the current round.")
 
         if self.cube.max_count_per_card > 0:
