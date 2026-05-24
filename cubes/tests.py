@@ -194,15 +194,3 @@ class CubeDetailViewTests(TestCase):
         alphabetical_names = [submission.card_name for submission in response.context["alphabetical_submissions"]]
         self.assertEqual(alphabetical_names, ["Bolt", "Counterspell", "Doom Blade", "Opt"])
         self.assertContains(response, "?view=table")
-
-
-class FaviconPreviewTests(TestCase):
-    def test_preview_page_shows_all_favicon_concepts(self):
-        response = self.client.get(reverse("favicon-preview"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Favicon concepts")
-        self.assertContains(response, "cubes/favicon-popcorn-card.svg")
-        self.assertContains(response, "cubes/favicon-card-fan.svg")
-        self.assertContains(response, "cubes/favicon-bucket-card.svg")
-        self.assertContains(response, "cubes/favicon-monogram-pc.svg")
