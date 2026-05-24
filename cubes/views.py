@@ -72,9 +72,11 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         can_submit = self._can_submit(cube)
         display_mode = "alphabetical" if self.request.GET.get("view") == "alphabetical" else "table"
         show_prior_submissions = self.request.GET.get("show_prior_submissions") == "1"
-        prior_submissions = cube.submissions.filter(player=self.request.user, round_number__lt=current_round).order_by(
-            "round_number", "created_at"
-        )
+        prior_submissions = Submission.objects.none()
+        if show_prior_submissions:
+            prior_submissions = cube.submissions.filter(player=self.request.user, round_number__lt=current_round).order_by(
+                "round_number", "created_at"
+            )
         participants = list(cube.participants.order_by("username"))
         complete_submissions = list(
             cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")

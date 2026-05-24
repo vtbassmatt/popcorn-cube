@@ -155,7 +155,8 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "Show my prior submissions")
         self.assertNotContains(response, "My prior submissions")
         self.assertNotContains(response, "Hide prior submissions")
-        self.assertNotContains(response, "Opt")
+        self.assertFalse(response.context["show_prior_submissions"])
+        self.assertEqual(list(response.context["prior_submissions"]), [])
 
     def test_open_cube_can_show_prior_submissions_when_requested(self):
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
