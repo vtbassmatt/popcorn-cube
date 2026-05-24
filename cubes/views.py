@@ -67,11 +67,19 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         previous_round_cards = cube.submissions.filter(round_number=current_round - 1).exclude(
             player=self.request.user
         )
+        current_round_submitted_player_ids = set(
+            cube.submissions.filter(round_number=current_round).values_list("player_id", flat=True)
+        )
         submission = self._submission(cube).first()
         already_submitted = self._already_submitted(cube)
         can_submit = self._can_submit(cube)
         display_mode = "alphabetical" if self.request.GET.get("view") == "alphabetical" else "table"
         participants = list(cube.participants.order_by("username"))
+        waiting_on_participants = [
+            participant
+            for participant in participants
+            if participant.pk != self.request.user.pk and participant.pk not in current_round_submitted_player_ids
+        ]
         complete_submissions = list(
             cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
         )
@@ -108,6 +116,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                 "submitted_card": submission,
                 "already_submitted": already_submitted,
                 "can_submit": can_submit,
+                "waiting_on_participants": waiting_on_participants,
                 "form": form,
                 "display_mode": display_mode,
                 "results_participants": participants,
