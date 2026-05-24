@@ -161,7 +161,13 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(list(response.context["prior_submissions"]), [])
 
     def test_open_cube_can_show_prior_submissions_when_requested(self):
-        Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Opt",
+            related_to="Keeps options open",
+        )
         Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=2, card_name="Doom Blade")
         Submission.objects.create(cube=self.cube, player=self.other, round_number=2, card_name="Counterspell")
@@ -173,6 +179,7 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "Hide prior submissions")
         self.assertContains(response, "Opt")
         self.assertContains(response, "Doom Blade")
+        self.assertContains(response, "Keeps options open")
         prior_submission_names = [submission.card_name for submission in response.context["prior_submissions"]]
         self.assertEqual(prior_submission_names, ["Opt", "Doom Blade"])
 
