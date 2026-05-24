@@ -1,15 +1,20 @@
 """
-Django settings for config project.
+Django settings for Popcorn Cube.
 """
 
 import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from decouple import config, Csv
+from dj_database_url import parse as db_url
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key")
-DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS: list[str] = []
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-change-me")
+DEBUG = config("DEBUG", default=False, cast=bool)
+COMMIT_HASH = config('COMMIT_HASH', default='dev')
+DEPLOY_REF = config('DEPLOY_REF', default=None)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -55,10 +60,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    'default': config(
+        'DATABASE_URL',
+        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
+        cast=db_url,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
