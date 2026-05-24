@@ -13,3 +13,4 @@ class CubeAdmin(admin.ModelAdmin):
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ("cube", "round_number", "player", "card_name")
     list_filter = ("cube", "round_number")
+    readonly_fields = ("round_number", )
