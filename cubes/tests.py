@@ -189,6 +189,20 @@ class CubeDetailViewTests(TestCase):
         self.assertTrue(Submission.objects.filter(cube=self.cube, player=self.owner, card_name="Opt").exists())
         self.assertContains(response, "Card submitted.")
 
+    def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
+        third = User.objects.create_user(username="third", password="pass")
+        self.cube.participants.add(third)
+        Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertContains(response, "You already submitted")
+        self.assertContains(response, "Waiting on: third.")
+        waiting_on_usernames = [participant.username for participant in response.context["waiting_on_participants"]]
+        self.assertEqual(waiting_on_usernames, ["third"])
+
     def test_full_cube_defaults_to_tabular_results_view(self):
         closed_cube = Cube.objects.create(name="Closed Cube", owner=self.owner, max_cards=3)
         closed_cube.participants.add(self.other)
