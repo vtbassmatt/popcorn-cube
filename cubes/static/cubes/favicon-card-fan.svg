@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 64 64"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath9">
+      <rect
+         style="fill:none;stroke:#7dd3fc;stroke-opacity:1"
+         id="rect9"
+         width="30.459984"
+         height="50.476547"
+         x="-56.457249"
+         y="-46.76416"
+         transform="rotate(179.417)"
+         d="m -56.457249,-46.76416 h 30.459984 V 3.7123871 h -30.459984 z" />
+    </clipPath>
+  </defs>
+  <rect
+     x="4.1090288"
+     y="18.334108"
+     width="24"
+     height="34"
+     rx="4"
+     fill="#1f2937"
+     transform="rotate(-10)"
+     id="rect1" />
+  <rect
+     x="20"
+     y="11"
+     width="24"
+     height="38"
+     rx="4"
+     fill="#111827"
+     id="rect2" />
+  <rect
+     x="34.918667"
+     y="7.2206244"
+     width="24"
+     height="34"
+     rx="4"
+     fill="#374151"
+     transform="rotate(10)"
+     id="rect3" />
+  <path
+     style="fill:none;stroke:#7dd3fc;stroke-width:5;stroke-linecap:round;stroke-dasharray:7, 6;stroke-opacity:1"
+     d="M 2.5953704,3.0482911 C 7.0952864,21.85575 11.595112,40.662832 18.416027,40.887871 25.236941,41.11291 34.378398,22.755889 43.520038,4.3985007"
+     id="path6"
+     transform="matrix(0.99994823,-0.01017509,-0.01017509,-0.99994823,-18.734265,71.349717)" />
+  <path
+     style="fill:none;stroke:#7dd3fc;stroke-width:5;stroke-linecap:round;stroke-dasharray:7, 6;stroke-opacity:1"
+     d="M 2.5953704,3.0482911 C 7.0952864,21.85575 11.595112,40.662832 18.416027,40.887871 25.236941,41.11291 34.378398,22.755889 43.520038,4.3985007"
+     id="path7"
+     transform="rotate(-179.417,36.256875,34.164927)"
+     clip-path="url(#clipPath9)" />
+  <g
+     id="g6"
+     transform="translate(11.53128,2.8284271)">
+    <circle
+       cx="34"
+       cy="31"
+       r="8"
+       fill="#fef3c7"
+       id="circle3" />
+    <circle
+       cx="29"
+       cy="30"
+       r="4"
+       fill="#fff7d6"
+       id="circle4" />
+    <circle
+       cx="38"
+       cy="28"
+       r="4"
+       fill="#fff7d6"
+       id="circle5" />
+    <circle
+       cx="36"
+       cy="35"
+       r="3"
+       fill="#fde68a"
+       id="circle6" />
+  </g>
+</svg>
