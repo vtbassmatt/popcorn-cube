@@ -6,7 +6,7 @@
 
 <div class="row g-3 mb-4">
   <div class="col-md-4"><div class="card card-body"><strong>Participants</strong><span>{{ cube.participant_count }}</span></div></div>
-  <div class="col-md-4"><div class="card card-body"><strong>Format</strong><span>{% if cube.format_legality %}{{ cube.get_format_legality_display }}{% else %}Any{% endif %}</span></div></div>
+  <div class="col-md-4"><div class="card card-body"><strong>Cards allowed</strong><span>{% if cube.format_legality %}{{ cube.get_format_legality_display }}{% else %}Any{% endif %}</span></div></div>
   <div class="col-md-4"><div class="card card-body"><strong>Max copies per card</strong><span>{% if cube.max_count_per_card == 0 %}Unlimited{% else %}{{ cube.max_count_per_card }}{% endif %}</span></div></div>
 </div>
 
