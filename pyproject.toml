@@ -10,3 +10,8 @@ dependencies = [
     "django-runserveronhostname>=0.3.0",
     "python-decouple>=3.8",
 ]
+
+[dependency-groups]
+prod = [
+    "gunicorn>=26.0.0",
+]
