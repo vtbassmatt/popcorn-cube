@@ -11,7 +11,11 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'cube-list' %}">Popcorn Cube</a>
+        <a class="navbar-brand" href="{% url 'cube-list' %}">
+          <img src="{% static 'cubes/favicon-card-fan.svg' %}" alt="" width="30" height="24"
+               class="d-inline-block align-text-top bg-secondary rounded border">
+          Popcorn Cube
+        </a>
         <div class="d-flex text-white">
           {% if user.is_authenticated %}
             <span class="me-3">{{ user.username }}</span>
