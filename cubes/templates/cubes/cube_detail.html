@@ -55,7 +55,7 @@
   {% if display_mode == "alphabetical" %}
     <ul class="list-group mb-4">
       {% for submission in alphabetical_submissions %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
+        <li class="list-group-item d-flex justify-content-between align-items-start">
           <div>
             <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
             {% if submission.related_to %}
