@@ -1,0 +1,245 @@
+/* --- MTG-themed dark/mystical UI --- */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Nunito:wght@400;500;600&display=swap');
+
+/* Stars background */
+html {
+  min-height: 100%;
+}
+
+body {
+  background: #0b0e17;
+  color: #e0ddd5;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animated star layers */
+.stars, .stars-2, .stars-3 {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at  50px 120px, #fff, transparent),
+    radial-gradient(1px 1px at 180px  80px, #fff, transparent),
+    radial-gradient(1px 1px at 320px 200px, #fff, transparent),
+    radial-gradient(1px 1px at 450px  60px, #fff, transparent),
+    radial-gradient(1px 1px at 600px 180px, #fff, transparent),
+    radial-gradient(1px 1px at 120px 300px, #fff, transparent),
+    radial-gradient(1px 1px at 750px 280px, #fff, transparent),
+    radial-gradient(1px 1px at 280px 400px, #fff, transparent),
+    radial-gradient(1px 1px at 900px 100px, #fff, transparent),
+    radial-gradient(1px 1px at 1050px 350px, #fff, transparent),
+    radial-gradient(1px 1px at 200px 500px, #fff, transparent),
+    radial-gradient(1px 1px at 500px 450px, #fff, transparent),
+    radial-gradient(1px 1px at 700px 50px, #fff, transparent),
+    radial-gradient(1px 1px at 850px 420px, #fff, transparent),
+    radial-gradient(1px 1px at 1100px 200px, #fff, transparent);
+  background-size: 1200px 600px;
+  animation: drift 90s linear infinite;
+  opacity: 0.7;
+}
+
+.stars-2 {
+  background-image:
+    radial-gradient(1.5px 1.5px at 100px 250px, #cde, transparent),
+    radial-gradient(1.5px 1.5px at 400px 150px, #cde, transparent),
+    radial-gradient(1.5px 1.5px at 650px 320px, #eec, transparent),
+    radial-gradient(1.5px 1.5px at 800px 400px, #cde, transparent),
+    radial-gradient(1.5px 1.5px at 300px 50px,  #eec, transparent),
+    radial-gradient(1.5px 1.5px at 950px 250px, #cde, transparent),
+    radial-gradient(1.5px 1.5px at 150px 420px, #eec, transparent),
+    radial-gradient(1.5px 1.5px at 550px 100px, #cde, transparent);
+  background-size: 1100px 500px;
+  animation: drift 120s linear infinite reverse;
+  opacity: 0.5;
+}
+
+.stars-3 {
+  background-image:
+    radial-gradient(2px 2px at 250px 180px, #ffd, transparent),
+    radial-gradient(2px 2px at 700px 90px,  #ffd, transparent),
+    radial-gradient(2px 2px at 500px 350px, #ffd, transparent),
+    radial-gradient(2px 2px at 1000px 150px,#ffd, transparent),
+    radial-gradient(2px 2px at 350px 450px, #ffd, transparent);
+  background-size: 1300px 550px;
+  animation: twinkle 4s ease-in-out infinite alternate, drift 150s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes drift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-600px); }
+}
+
+@keyframes twinkle {
+  from { opacity: 0.3; }
+  to   { opacity: 0.8; }
+}
+
+/* Ensure content is above stars */
+.navbar, main, footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Navbar: deep purple/dark with gold accent */
+.navbar {
+  background: linear-gradient(135deg, #1a1228 0%, #0d1117 100%) !important;
+  border-bottom: 2px solid #8b6914;
+  box-shadow: 0 2px 12px rgba(139, 105, 20, 0.3);
+}
+
+.navbar-brand {
+  font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.05em;
+  color: #d4a843 !important;
+  font-size: 1.15rem;
+}
+
+/* Cards & forms: translucent dark panels */
+.card {
+  background: rgba(20, 18, 30, 0.85);
+  border: 1px solid rgba(139, 105, 20, 0.3);
+  backdrop-filter: blur(6px);
+  color: #e0ddd5;
+}
+
+.card-body {
+  background: transparent;
+}
+
+.list-group-item {
+  background: rgba(20, 18, 30, 0.8);
+  border-color: rgba(139, 105, 20, 0.2);
+  color: #e0ddd5;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.list-group-item.active,
+.list-group-item-action:hover {
+  background: rgba(139, 105, 20, 0.3) !important;
+  border-color: rgba(139, 105, 20, 0.5);
+  color: #ffeab5;
+}
+
+/* Headings */
+h1, h2, h3, .h1, .h2, .h3, .h4, .h5 {
+  font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
+  color: #d4a843;
+  letter-spacing: 0.02em;
+}
+
+.h3, h3 { font-size: 1.4rem; }
+.h5, h5 { font-size: 1rem; }
+
+/* Tighter spacing */
+.mb-4 { margin-bottom: 1.25rem !important; }
+.mb-3 { margin-bottom: 0.85rem !important; }
+.mt-3 { margin-top: 0.85rem !important; }
+.g-3 { gap: 0.75rem !important; }
+.card-body { padding: 0.85rem; }
+
+main.container { max-width: 960px; padding-top: 0.5rem; }
+
+/* Links */
+a {
+  color: #c9a84c;
+}
+a:hover {
+  color: #ffeab5;
+}
+
+/* Buttons: gold accent */
+.btn-primary {
+  background: linear-gradient(135deg, #8b6914, #c9a84c);
+  border-color: #8b6914;
+  color: #1a1228;
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #a07a1a, #dbb85c);
+  border-color: #a07a1a;
+  color: #1a1228;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #2d6a30, #4a9e4e);
+  border-color: #2d6a30;
+}
+
+.btn-outline-secondary {
+  border-color: rgba(139, 105, 20, 0.5);
+  color: #c9a84c;
+}
+.btn-outline-secondary:hover {
+  background: rgba(139, 105, 20, 0.2);
+  border-color: #c9a84c;
+  color: #ffeab5;
+}
+
+.btn-outline-light {
+  border-color: rgba(212, 168, 67, 0.5);
+  color: #d4a843;
+}
+.btn-outline-light:hover {
+  background: rgba(212, 168, 67, 0.15);
+  color: #ffeab5;
+}
+
+/* Form inputs: dark with gold focus */
+.form-control {
+  background: rgba(15, 13, 25, 0.9);
+  border: 1px solid rgba(139, 105, 20, 0.3);
+  color: #e0ddd5;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+}
+.form-control:focus {
+  background: rgba(15, 13, 25, 0.95);
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 0.2rem rgba(201, 168, 76, 0.25);
+  color: #e0ddd5;
+}
+
+label {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.85rem;
+  color: #c9a84c;
+  margin-bottom: 0.2rem;
+}
+
+.form-text {
+  font-size: 0.8rem;
+}
+
+/* Alerts */
+.alert-success { background: rgba(45, 106, 48, 0.3); border-color: #2d6a30; color: #a8d5a9; }
+.alert-info    { background: rgba(30, 60, 110, 0.3); border-color: #1e3c6e; color: #a8c4e0; }
+.alert-danger,
+.alert-error   { background: rgba(120, 30, 30, 0.3); border-color: #781e1e; color: #e0a8a8; }
+
+/* Text utilities */
+.text-muted { color: #8a8575 !important; }
+code { color: #c9a84c; }
+
+/* Table */
+.table { color: #e0ddd5; }
+.table-bordered { border-color: rgba(139, 105, 20, 0.2); }
+.table-light, .table thead th { background: rgba(30, 25, 45, 0.9) !important; color: #d4a843; border-color: rgba(139, 105, 20, 0.3); }
+.table td { border-color: rgba(139, 105, 20, 0.15); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0b0e17; }
+::-webkit-scrollbar-thumb { background: #8b6914; border-radius: 4px; }
