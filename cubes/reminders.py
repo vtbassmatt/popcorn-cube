@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -15,7 +15,7 @@ def _reminder_delay_days() -> int:
 def queue_round_open_notifications(
     cube: Cube,
     round_number: int,
-    round_opened_at,
+    round_opened_at: datetime,
     participants=None,
 ) -> None:
     participant_list = list(participants or cube.participants.all())
