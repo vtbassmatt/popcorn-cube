@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
@@ -309,6 +310,7 @@ class HowItWorksPageTests(TestCase):
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class SubmissionNotificationTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = User.objects.create_user(username="owner", password="pass", email="owner@example.com")
         self.other = User.objects.create_user(username="other", password="pass", email="other@example.com")
 
