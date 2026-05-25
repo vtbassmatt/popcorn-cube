@@ -2,7 +2,6 @@
 Django settings for Popcorn Cube.
 """
 
-import os
 from pathlib import Path
 
 from decouple import config, Csv
@@ -13,7 +12,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-change-me")
 DEBUG = config("DEBUG", default=False, cast=bool)
 COMMIT_HASH = config('COMMIT_HASH', default='dev')
-DEPLOY_REF = config('DEPLOY_REF', default=None)
+DEPLOY_REF = config('DEPLOY_REF', default='---')
+REPO_URL = config('REPO_URL', default='https://github.com/vtbassmatt/popcorn-cube')
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
 
 INSTALLED_APPS = [
@@ -54,6 +54,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.deployment_details",
             ],
         },
     },
