@@ -22,7 +22,7 @@
               <div><small class="text-muted">{{ submission.related_to }}</small></div>
             {% endif %}
           </div>
-          <small class="text-muted">{{ submission.player.username }}</small>
+          <small class="text-muted">{% if submission.player == request.user %}<span class="badge text-bg-secondary">you</span>{% else %}{{ submission.player.username }}{% endif %}</small>
         </li>
       {% endfor %}
     </ul>
