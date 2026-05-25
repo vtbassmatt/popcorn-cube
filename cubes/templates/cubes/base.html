@@ -13,13 +13,13 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="{% url 'cube-list' %}">
           <img src="{% static 'cubes/popcorn-card-fan.svg' %}" alt="" width="30" height="24"
-               class="d-inline-block align-text-top bg-secondary rounded border">
+               class="d-inline-block align-text-top bg-primary bg-gradient rounded border">
           Popcorn Cube
         </a>
         <div class="d-flex text-white">
           {% if user.is_authenticated %}
-            <span class="me-3">{{ user.username }}</span>
-            <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Logout</a>
+            <span class="me-3 navbar-text">{{ user.username }}</span>
+            <a class="btn btn-outline-light" href="{% url 'logout' %}">Logout</a>
           {% endif %}
         </div>
       </div>
