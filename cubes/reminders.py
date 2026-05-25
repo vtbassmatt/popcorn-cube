@@ -58,7 +58,14 @@ def _deliver_notification(
         round_number=round_number,
         kind=kind,
     )
-    return bool(send_mail(subject, body, None, [player.email]))
+    return bool(
+        send_mail(
+            subject,
+            body,
+            getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            [player.email],
+        )
+    )
 
 
 def _build_notification_email(
