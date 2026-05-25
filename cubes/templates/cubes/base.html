@@ -18,8 +18,11 @@
         </a>
         <div class="d-flex text-white">
           {% if user.is_authenticated %}
+          <form class="d-flex" method="post" action="{% url 'logout' %}">
             <span class="me-3 navbar-text">{{ user.username }}</span>
-            <a class="btn btn-outline-light" href="{% url 'logout' %}">Logout</a>
+            <button class="btn btn-outline-light" type="submit">Logout</button>
+            {% csrf_token %}
+          </form>
           {% endif %}
         </div>
       </div>
