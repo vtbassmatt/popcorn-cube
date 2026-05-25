@@ -1,4 +1,5 @@
 {% extends "cubes/base.html" %}
+{% load static %}
 
 {% block content %}
 <h1 class="h3 mb-3">Submit card · {{ cube.name }}</h1>
@@ -12,4 +13,6 @@
     <a class="btn btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}">Cancel</a>
   </div>
 </form>
+
+<script src="{% static 'cubes/card-autocomplete.js' %}"></script>
 {% endblock %}

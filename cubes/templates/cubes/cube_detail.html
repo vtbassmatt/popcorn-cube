@@ -1,4 +1,5 @@
 {% extends "cubes/base.html" %}
+{% load static %}
 
 {% block content %}
 <h1 class="h3">{{ cube.name }}</h1>
@@ -132,4 +133,6 @@
     </div>
   {% endif %}
 {% endif %}
+
+<script src="{% static 'cubes/card-autocomplete.js' %}"></script>
 {% endblock %}

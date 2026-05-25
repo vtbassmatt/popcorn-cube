@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic",
+    *(() if DEBUG else ("whitenoise.runserver_nostatic",)),
     "django.contrib.staticfiles",
     "django.forms",
     "runserveronhostname",
