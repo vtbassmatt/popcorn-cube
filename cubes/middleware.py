@@ -6,5 +6,6 @@ class SubmissionReminderMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        queue_due_submission_reminders()
+        if getattr(request, "user", None) and request.user.is_authenticated:
+            queue_due_submission_reminders()
         return self.get_response(request)

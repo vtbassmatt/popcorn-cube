@@ -8,6 +8,10 @@ from django.utils import timezone
 from .models import Cube, NotificationDelivery, SubmissionReminder, User
 
 
+def _reminder_delay_days() -> int:
+    return getattr(settings, "SUBMISSION_REMINDER_DAYS", 3)
+
+
 def queue_round_open_notifications(
     cube: Cube,
     round_number: int,
@@ -22,7 +26,7 @@ def queue_round_open_notifications(
             player=participant,
             round_number=round_number,
             defaults={
-                "remind_after": round_opened_at + timedelta(days=settings.SUBMISSION_REMINDER_DAYS),
+                "remind_after": round_opened_at + timedelta(days=_reminder_delay_days()),
             },
         )
         if created and reminder.remind_after <= timezone.now():
