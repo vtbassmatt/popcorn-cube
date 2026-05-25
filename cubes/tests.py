@@ -325,6 +325,17 @@ class SubmissionNotificationTests(TestCase):
             SubmissionReminder.objects.filter(cube=cube, round_number=1, player=self.other).exists()
         )
 
+    @override_settings(SUBMISSION_REMINDER_DAYS=1)
+    def test_reminder_timing_comes_from_settings(self):
+        cube = Cube.objects.create(name="Configurable Reminder Cube", owner=self.owner, max_cards=6)
+        reminder = SubmissionReminder.objects.get(cube=cube, player=self.owner, round_number=1)
+
+        self.assertAlmostEqual(
+            (reminder.remind_after - cube.created_at).total_seconds(),
+            timedelta(days=1).total_seconds(),
+            delta=1,
+        )
+
     def test_round_completion_notifies_players_about_next_round(self):
         cube = Cube.objects.create(name="Next Round Cube", owner=self.owner, max_cards=6)
         cube.participants.add(self.other)
