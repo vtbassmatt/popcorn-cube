@@ -20,8 +20,8 @@ class CubeListView(LoginRequiredMixin, ListView):
         return Cube.objects.filter(participants=self.request.user).distinct()
 
 
-class HowItWorksView(TemplateView):
-    template_name = "cubes/how_it_works.html"
+class HowThisWorksView(TemplateView):
+    template_name = "cubes/how_this_works.html"
 
 
 class CubeCreateView(LoginRequiredMixin, CreateView):

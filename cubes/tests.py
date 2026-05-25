@@ -284,7 +284,7 @@ class CubeDetailViewTests(TestCase):
 
 class HowItWorksPageTests(TestCase):
     def test_how_it_works_page_shows_core_rules(self):
-        response = self.client.get(reverse("how-it-works"))
+        response = self.client.get(reverse("how-this-works"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Submit one card each round.")
@@ -300,4 +300,4 @@ class HowItWorksPageTests(TestCase):
         response = self.client.get(reverse("login"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse("how-it-works"))
+        self.assertContains(response, reverse("how-this-works"))
