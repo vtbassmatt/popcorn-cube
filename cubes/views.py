@@ -187,3 +187,10 @@ def submit_card(request: HttpRequest, pk: int) -> HttpResponse:
         form = SubmissionForm(cube=cube, player=request.user)
 
     return render(request, "cubes/submission_form.html", {"form": form, "cube": cube})
+
+
+@login_required
+def my_submissions(request: HttpRequest, pk: int) -> HttpResponse:
+    cube = get_object_or_404(Cube, pk=pk, participants=request.user)
+    submissions = cube.submissions.filter(player=request.user).order_by("round_number", "created_at")
+    return render(request, "cubes/my_submissions.html", {"cube": cube, "submissions": submissions})

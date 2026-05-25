@@ -1,0 +1,33 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">My submissions · {{ cube.name }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'cube-detail' cube.pk %}">Back to cube</a>
+</div>
+
+{% if submissions %}
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+  {% for submission in submissions %}
+  <div class="col">
+    <div class="card h-100">
+      <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">
+        <img src="{{ submission.scryfall_image_url }}"
+             class="card-img-top rounded-top"
+             alt="{{ submission.card_name }}"
+             loading="lazy">
+      </a>
+      <div class="card-body p-2">
+        <p class="card-text mb-0 small fw-semibold">Round {{ submission.round_number }}</p>
+        {% if submission.related_to %}
+          <p class="card-text text-muted small mb-0">{{ submission.related_to }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">You haven't submitted any cards yet.</p>
+{% endif %}
+{% endblock %}

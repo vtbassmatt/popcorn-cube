@@ -122,3 +122,7 @@ class Submission(models.Model):
         if self.scryfall_id:
             return f"https://scryfall.com/card/{self.scryfall_id}"
         return f'https://scryfall.com/search?q=%21%22{quote(self.card_name)}%22'
+
+    @property
+    def scryfall_image_url(self) -> str:
+        return f"https://api.scryfall.com/cards/named?exact={quote(self.card_name)}&format=image&version=normal"
