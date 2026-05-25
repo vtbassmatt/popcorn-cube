@@ -37,6 +37,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "cubes.middleware.SubmissionReminderMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -89,6 +90,7 @@ USE_I18N = True
 USE_TZ = True
 
 RUNSERVER_ON = 'cubes.localhost:8000'
+SUBMISSION_REMINDER_DAYS = config("SUBMISSION_REMINDER_DAYS", default=3, cast=int)
 
 STATIC_URL = "static/"
 STATIC_ROOT = config('STATIC_DIR', default=BASE_DIR / '_static')

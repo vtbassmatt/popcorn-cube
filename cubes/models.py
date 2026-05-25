@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
 User = get_user_model()
@@ -122,3 +122,86 @@ class Submission(models.Model):
         if self.scryfall_id:
             return f"https://scryfall.com/card/{self.scryfall_id}"
         return f'https://scryfall.com/search?q=%21%22{quote(self.card_name)}%22'
+
+
+class NotificationDelivery(models.Model):
+    class Kind(models.TextChoices):
+        ROUND_READY = "round_ready", "Round ready"
+        GENTLE_REMINDER = "gentle_reminder", "Gentle reminder"
+
+    cube = models.ForeignKey(Cube, on_delete=models.CASCADE, related_name="notification_deliveries")
+    player = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notification_deliveries")
+    round_number = models.PositiveIntegerField()
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cube", "player", "round_number", "kind"],
+                name="unique_notification_delivery_per_kind",
+            )
+        ]
+        ordering = ["created_at"]
+
+
+class SubmissionReminder(models.Model):
+    cube = models.ForeignKey(Cube, on_delete=models.CASCADE, related_name="submission_reminders")
+    player = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submission_reminders")
+    round_number = models.PositiveIntegerField()
+    remind_after = models.DateTimeField()
+    processed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cube", "player", "round_number"],
+                name="unique_submission_reminder_per_round",
+            )
+        ]
+        ordering = ["remind_after", "created_at"]
+
+
+@receiver(m2m_changed, sender=Cube.participants.through)
+def queue_initial_round_notifications(
+    sender,
+    instance: Cube,
+    action: str,
+    reverse: bool,
+    pk_set,
+    **kwargs,
+) -> None:
+    if action != "post_add" or reverse or not pk_set or instance.submissions.exists():
+        return
+
+    from .reminders import queue_round_open_notifications
+
+    participants = User.objects.filter(pk__in=pk_set)
+    queue_round_open_notifications(
+        cube=instance,
+        round_number=1,
+        round_opened_at=instance.created_at,
+        participants=participants,
+    )
+
+
+@receiver(post_save, sender=Submission)
+def queue_next_round_notifications(sender, instance: Submission, created: bool, **kwargs) -> None:
+    if not created:
+        return
+
+    cube = instance.cube
+    if not cube.is_open:
+        return
+
+    if cube.submissions.filter(round_number=instance.round_number).count() != cube.participant_count:
+        return
+
+    from .reminders import queue_round_open_notifications
+
+    queue_round_open_notifications(
+        cube=cube,
+        round_number=instance.round_number + 1,
+        round_opened_at=instance.created_at,
+    )

@@ -1,12 +1,15 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .forms import SubmissionForm
-from .models import Cube, Submission
+from .models import Cube, NotificationDelivery, Submission, SubmissionReminder
 
 User = get_user_model()
 
@@ -301,3 +304,73 @@ class HowItWorksPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("how-this-works"))
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class SubmissionNotificationTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass", email="owner@example.com")
+        self.other = User.objects.create_user(username="other", password="pass", email="other@example.com")
+
+    def test_new_participants_are_notified_when_round_one_opens(self):
+        cube = Cube.objects.create(name="Mail Cube", owner=self.owner, max_cards=6)
+        cube.participants.add(self.other)
+
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual({message.to[0] for message in mail.outbox}, {"owner@example.com", "other@example.com"})
+        self.assertTrue(
+            SubmissionReminder.objects.filter(cube=cube, round_number=1, player=self.owner).exists()
+        )
+        self.assertTrue(
+            SubmissionReminder.objects.filter(cube=cube, round_number=1, player=self.other).exists()
+        )
+
+    def test_round_completion_notifies_players_about_next_round(self):
+        cube = Cube.objects.create(name="Next Round Cube", owner=self.owner, max_cards=6)
+        cube.participants.add(self.other)
+        mail.outbox.clear()
+
+        Submission.objects.create(cube=cube, player=self.owner, round_number=1, card_name="Opt")
+        Submission.objects.create(cube=cube, player=self.other, round_number=1, card_name="Bolt")
+
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn("Round 2", mail.outbox[0].subject)
+        self.assertEqual(
+            NotificationDelivery.objects.filter(
+                cube=cube,
+                round_number=2,
+                kind=NotificationDelivery.Kind.ROUND_READY,
+            ).count(),
+            2,
+        )
+
+    def test_due_reminders_are_sent_once_to_players_who_have_not_submitted(self):
+        cube = Cube.objects.create(name="Reminder Cube", owner=self.owner, max_cards=6)
+        cube.participants.add(self.other)
+        mail.outbox.clear()
+        Submission.objects.create(cube=cube, player=self.owner, round_number=1, card_name="Opt")
+        reminder = SubmissionReminder.objects.get(cube=cube, player=self.other, round_number=1)
+        reminder.remind_after = timezone.now() - timedelta(minutes=1)
+        reminder.save(update_fields=["remind_after"])
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["other@example.com"])
+        reminder.refresh_from_db()
+        self.assertIsNotNone(reminder.processed_at)
+
+        self.client.get(reverse("cube-list"))
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            NotificationDelivery.objects.filter(
+                cube=cube,
+                player=self.other,
+                round_number=1,
+                kind=NotificationDelivery.Kind.GENTLE_REMINDER,
+            ).count(),
+            1,
+        )
