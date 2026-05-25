@@ -1,0 +1,19 @@
+{% extends "cubes/base.html" %}
+
+{% block content %}
+<h1 class="h3">How it works</h1>
+<p class="text-muted">Each player submits one card per round until the cube is full.</p>
+
+<ol>
+  <li>Submit one card each round.</li>
+  <li>Starting in round 2, try to riff on cards from the previous round.</li>
+  <li>Round 1 has no previous round, so just pick a starting card.</li>
+  <li>You can optionally add a short reason for your pick; it is shown wherever that card is shown.</li>
+</ol>
+
+<h2 class="h5 mt-4">Cube-specific settings</h2>
+<ul>
+  <li><strong>Format legality:</strong> A cube can enforce a format (like Modern or Pioneer). If set, only cards legal in that format can be submitted.</li>
+  <li><strong>Max copies per card:</strong> Cubes can limit copies of the same card. <code>1</code> means singleton, and <code>0</code> means unlimited copies.</li>
+</ul>
+{% endblock %}
