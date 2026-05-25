@@ -11,7 +11,7 @@
 </div>
 
 {% if current_round > 1 and cube.is_open %}
-  <h2 class="h5">Previous round cards from other players</h2>
+  <h2 class="h5">Previous round cards</h2>
   {% if previous_round_cards %}
     <ul class="list-group mb-4">
       {% for submission in previous_round_cards %}
@@ -27,7 +27,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="text-muted">No cards from other players in the previous round yet.</p>
+    <p class="text-muted">No cards in the previous round yet.</p>
   {% endif %}
 {% endif %}
 
