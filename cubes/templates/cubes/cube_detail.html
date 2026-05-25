@@ -11,7 +11,7 @@
 </div>
 
 {% if current_round > 1 and cube.is_open %}
-  <h2 class="h5">Previous round cards from other players</h2>
+  <h2 class="h5">Previous round cards</h2>
   {% if previous_round_cards %}
     <ul class="list-group mb-4">
       {% for submission in previous_round_cards %}
@@ -22,12 +22,12 @@
               <div><small class="text-muted">{{ submission.related_to }}</small></div>
             {% endif %}
           </div>
-          <small class="text-muted">{{ submission.player.username }}</small>
+          <small class="text-muted">{% if submission.player == request.user %}<span class="badge text-bg-secondary">you</span>{% else %}{{ submission.player.username }}{% endif %}</small>
         </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p class="text-muted">No cards from other players in the previous round yet.</p>
+    <p class="text-muted">No cards in the previous round yet.</p>
   {% endif %}
 {% endif %}
 

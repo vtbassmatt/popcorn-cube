@@ -69,9 +69,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         cube: Cube = self.object
         current_round = cube.current_round
-        previous_round_cards = cube.submissions.filter(round_number=current_round - 1).exclude(
-            player=self.request.user
-        )
+        previous_round_cards = cube.submissions.filter(round_number=current_round - 1).select_related("player").order_by("pk")
         current_round_submitted_player_ids = set(
             cube.submissions.filter(round_number=current_round).values_list("player_id", flat=True)
         )

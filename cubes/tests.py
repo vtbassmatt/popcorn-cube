@@ -154,6 +154,10 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, 'href="https://scryfall.com/card/5678-efgh"')
         self.assertContains(response, 'target="_blank"')
         self.assertContains(response, "Pairs with Lightning Bolt")
+        previous_round_names = [submission.card_name for submission in response.context["previous_round_cards"]]
+        self.assertEqual(previous_round_names, ["Lightning Bolt", "Counterspell"])
+        self.assertContains(response, "Previous round cards")
+        self.assertContains(response, "Lightning Bolt")
 
     def test_detail_page_shows_inline_submission_form(self):
         self.client.login(username="owner", password="pass")
