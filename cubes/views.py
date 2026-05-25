@@ -5,6 +5,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
+from django.views.generic.base import TemplateView
 
 from .forms import CubeForm, SubmissionForm
 from .models import Cube, Submission
@@ -17,6 +18,10 @@ class CubeListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Cube.objects.filter(participants=self.request.user).distinct()
+
+
+class HowThisWorksView(TemplateView):
+    template_name = "cubes/how_this_works.html"
 
 
 class CubeCreateView(LoginRequiredMixin, CreateView):

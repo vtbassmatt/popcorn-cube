@@ -280,3 +280,24 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(alphabetical_names, ["Bolt", "Counterspell", "Doom Blade", "Opt"])
         self.assertContains(response, "Keeps options open")
         self.assertContains(response, "?view=table")
+
+
+class HowItWorksPageTests(TestCase):
+    def test_how_it_works_page_shows_core_rules(self):
+        response = self.client.get(reverse("how-this-works"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Submit one card each round.")
+        self.assertContains(response, "Starting in round 2, try to riff on cards from the previous round.")
+        self.assertContains(response, "Round 1 has no previous round")
+        self.assertContains(response, "shown wherever that card is shown")
+        self.assertContains(response, "Format legality")
+        self.assertContains(response, "Max copies per card")
+        self.assertContains(response, "singleton")
+        self.assertContains(response, "unlimited copies")
+
+    def test_login_page_links_to_how_it_works(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("how-this-works"))
