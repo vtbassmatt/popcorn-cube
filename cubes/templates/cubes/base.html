@@ -8,13 +8,15 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'cubes/popcorn-card-fan.svg' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <link href="{% static 'cubes/sky-effects.css' %}" rel="stylesheet">
+    {% if STARS_ARE_GO %}<link href="{% static 'cubes/sky-effects.css' %}" rel="stylesheet">{% endif %}
   </head>
   <body>
+    {% if STARS_ARE_GO %}
     <div class="stars"></div>
     <div class="stars-2"></div>
     <div class="stars-3"></div>
     <canvas id="sky-effects" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+    {% endif %}
     <nav class="navbar navbar-expand-lg bg-dark mb-4" data-bs-theme="dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="{% url 'cube-list' %}">
@@ -61,6 +63,6 @@
       {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'cubes/sky-effects.js' %}"></script>
+    {% if STARS_ARE_GO %}<script src="{% static 'cubes/sky-effects.js' %}"></script>{% endif %}
   </body>
 </html>

@@ -10,3 +10,7 @@ def deployment_details(request):
         "DEPLOY_REF": settings.DEPLOY_REF,
         "REPO_URL": repo_url,
     }
+
+
+def choose_stars(request):
+    return { 'STARS_ARE_GO': request.user and request.user.username == 'ross' }

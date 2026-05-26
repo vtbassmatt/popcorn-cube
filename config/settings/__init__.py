@@ -55,6 +55,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.deployment_details",
+                "config.context_processors.choose_stars",
             ],
         },
     },
