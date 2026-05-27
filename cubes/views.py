@@ -101,17 +101,17 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         )
         if cube.is_open:
             stats_submissions = list(ordered_submissions.filter(round_number__lt=current_round))
-            complete_submissions = []
+            display_submissions = []
         else:
-            complete_submissions = list(ordered_submissions)
-            stats_submissions = complete_submissions
+            display_submissions = list(ordered_submissions)
+            stats_submissions = display_submissions
         has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
         cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
         round_rows = []
         alphabetical_submissions = []
         if not cube.is_open:
             submissions_by_round = {}
-            for submission in complete_submissions:
+            for submission in display_submissions:
                 submissions_by_round.setdefault(submission.round_number, {})[submission.player_id] = submission
             for round_number in sorted(submissions_by_round):
                 round_rows.append(
@@ -121,7 +121,7 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                     }
                 )
             alphabetical_submissions = sorted(
-                complete_submissions,
+                display_submissions,
                 key=lambda submission: (
                     submission.card_name.lower(),
                     submission.player.username.lower(),
