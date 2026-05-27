@@ -54,10 +54,9 @@ def _color_combo_sort_key(colors: tuple[str, ...]) -> tuple[Any, ...]:
 
     if len(colors) == 2:
         combo = COLOR_PAIR_BY_SET.get(frozenset(colors), "".join(colors))
-        if combo in ALLY_COLOR_PAIR_ORDER:
-            return (1, ALLY_COLOR_PAIR_ORDER.index(combo))
-        if combo in ENEMY_COLOR_PAIR_ORDER:
-            return (2, ENEMY_COLOR_PAIR_ORDER.index(combo))
+        color_pair = _classify_color_pair(combo)
+        if color_pair is not None:
+            return color_pair
 
     return (3, len(colors), tuple(COLOR_TO_INDEX[color] for color in colors))
 
@@ -67,10 +66,31 @@ def _ordered_color_combo_counts(counts: Counter[tuple[str, ...]]) -> dict[str, i
 
 
 def _ordered_inclusive_color_counts(counts: Counter[str]) -> dict[str, int]:
-    ordered = {color: counts[color] for color in COLOR_ORDER if counts[color]}
-    if counts["Colorless"]:
+    ordered = {color: counts.get(color, 0) for color in COLOR_ORDER if counts.get(color, 0)}
+    if counts.get("Colorless", 0):
         ordered["Colorless"] = counts["Colorless"]
     return ordered
+
+
+def _classify_color_pair(pair: str) -> tuple[int, int] | None:
+    if pair in ALLY_COLOR_PAIR_ORDER:
+        return (1, ALLY_COLOR_PAIR_ORDER.index(pair))
+    if pair in ENEMY_COLOR_PAIR_ORDER:
+        return (2, ENEMY_COLOR_PAIR_ORDER.index(pair))
+    return None
+
+
+def _normalized_two_color_pair(parts: list[str]) -> str | None:
+    if len(parts) != 2 or not all(part in COLOR_ORDER for part in parts):
+        return None
+    return COLOR_PAIR_BY_SET.get(frozenset(parts))
+
+
+def _normalized_two_color_pair_symbol(parts: list[str]) -> str | None:
+    pair = _normalized_two_color_pair(parts)
+    if pair is None:
+        return None
+    return f"{pair[0]}/{pair[1]}"
 
 
 def _mana_symbol_sort_key(symbol: str) -> tuple[Any, ...]:
@@ -80,12 +100,11 @@ def _mana_symbol_sort_key(symbol: str) -> tuple[Any, ...]:
         return (4, symbol)
     if "/" in symbol:
         parts = symbol.split("/")
-        if len(parts) == 2 and all(part in COLOR_ORDER for part in parts):
-            combo = COLOR_PAIR_BY_SET.get(frozenset(parts), "".join(color for color in COLOR_ORDER if color in parts))
-            if combo in ALLY_COLOR_PAIR_ORDER:
-                return (1, ALLY_COLOR_PAIR_ORDER.index(combo))
-            if combo in ENEMY_COLOR_PAIR_ORDER:
-                return (2, ENEMY_COLOR_PAIR_ORDER.index(combo))
+        combo = _normalized_two_color_pair(parts)
+        if combo:
+            color_pair = _classify_color_pair(combo)
+            if color_pair is not None:
+                return color_pair
             return (3, combo)
         return (3, symbol)
     return (5, symbol)
@@ -129,11 +148,12 @@ def _add_mana_pips(counter: Counter[str], mana_cost: Any) -> None:
             continue
         if "/" in symbol:
             parts = symbol.split("/")
-            if len(parts) == 2 and all(part in COLOR_ORDER for part in parts):
-                pair = COLOR_PAIR_BY_SET.get(frozenset(parts))
-                if pair:
-                    counter[f"{pair[0]}/{pair[1]}"] += 1
-                    continue
+            # Normalize two-color hybrid symbols (for example, G/W and W/G both become G/W)
+            # so display ordering and aggregation stay consistent.
+            pair_symbol = _normalized_two_color_pair_symbol(parts)
+            if pair_symbol:
+                counter[pair_symbol] += 1
+                continue
             counter[symbol] += 1
 
 

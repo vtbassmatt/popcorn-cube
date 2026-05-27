@@ -24,7 +24,7 @@
                 <div class="card bg-body-tertiary border-0 h-100">
                   <div class="card-body">
                     <h4 class="h6">Color breakdown (inclusive)</h4>
-                    <canvas id="{{ scope_name }}-inclusive-chart" role="img" aria-label="{{ scope_name }} inclusive color chart"></canvas>
+                    <canvas id="{{ scope_name }}-inclusive-chart" role="img" aria-label="Inclusive color distribution chart for {{ scope_name }}"></canvas>
                   </div>
                 </div>
               </div>
@@ -32,7 +32,7 @@
                 <div class="card bg-body-tertiary border-0 h-100">
                   <div class="card-body">
                     <h4 class="h6">Mana pips (WUBRG)</h4>
-                    <canvas id="{{ scope_name }}-pip-chart" role="img" aria-label="{{ scope_name }} mana pip chart"></canvas>
+                    <canvas id="{{ scope_name }}-pip-chart" role="img" aria-label="Mana pip distribution chart for {{ scope_name }}"></canvas>
                   </div>
                 </div>
               </div>
@@ -111,7 +111,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <script>
     (function () {
-      if (typeof Chart === "undefined") return;
+      // Guards against Chart.js CDN load failure.
+      if (typeof Chart === "undefined") {
+        console.warn("Chart.js failed to load from CDN; stats charts are unavailable.");
+        return;
+      }
       const statsElement = document.getElementById("cube-stats-data");
       if (!statsElement) return;
 
@@ -124,6 +128,7 @@
         const scopeStats = stats[scopeName];
         if (!scopeStats) continue;
 
+        // Charts intentionally focus on WUBRG comparisons across the five colors.
         const inclusiveData = colorOrder.map((color) => Number((scopeStats.color_breakdown.inclusive || {})[color] || 0));
         const pipData = colorOrder.map((color) => Number((scopeStats.mana_pips || {})[color] || 0));
 
@@ -134,7 +139,7 @@
             data: {
               labels: colorOrder,
               datasets: [{
-                label: "Cards",
+                label: scopeName === "faces" ? "Faces" : "Cards",
                 data: inclusiveData,
                 borderColor: chartColor,
                 backgroundColor: chartFill,
