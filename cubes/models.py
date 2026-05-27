@@ -1,4 +1,4 @@
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -18,6 +18,16 @@ FORMAT_CHOICES = [
     ("commander", "Commander"),
     ("pauper", "Pauper"),
 ]
+
+FORMAT_SCRYFALL_CODES = {
+    "standard": "standard",
+    "pioneer": "pioneer",
+    "modern": "modern",
+    "legacy": "legacy",
+    "vintage": "vintage",
+    "commander": "edh",
+    "pauper": "pauper",
+}
 
 
 class Cube(models.Model):
@@ -61,6 +71,14 @@ class Cube(models.Model):
     @property
     def is_open(self) -> bool:
         return self.cards_submitted < self.effective_max_cards
+
+    @property
+    def format_legality_scryfall_url(self) -> str | None:
+        if not self.format_legality:
+            return None
+        scryfall_code = FORMAT_SCRYFALL_CODES.get(self.format_legality, self.format_legality)
+        query = urlencode({"q": f"f:{scryfall_code} in:paper"})
+        return f"https://scryfall.com/search?{query}"
 
 
 @receiver(post_save, sender=Cube)
