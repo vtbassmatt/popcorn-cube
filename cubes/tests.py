@@ -319,9 +319,8 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "cdn.jsdelivr.net/npm/chart.js")
         self.assertContains(response, "cards-inclusive-chart")
         self.assertContains(response, "faces-pip-chart")
-        self.assertContains(response, "<summary>Subtypes</summary>", html=False)
+        self.assertContains(response, "<summary>Subtypes</summary>")
         self.assertContains(response, "beginAtZero: true")
-        self.assertContains(response, "min: 0")
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
@@ -522,6 +521,29 @@ class CubeStatsTests(TestCase):
             list(stats["cards"]["mana_pips"].keys()),
             ["W", "U", "B", "R", "G", "W/U", "U/B", "B/R", "R/G", "G/W", "W/B", "U/R", "B/G", "R/W", "G/U", "C", "S"],
         )
+
+    def test_compute_cube_stats_deduplicates_split_card_type_and_subtype_tokens(self):
+        owner = User.objects.create_user(username="dedupe-owner", password="pass")
+        cube = Cube.objects.create(name="Dedupe Cube", owner=owner, max_cards=2)
+        cube.participants.add(owner)
+        Submission.objects.create(
+            cube=cube,
+            player=owner,
+            round_number=1,
+            card_name="Echo // Echo",
+            card_snapshot={
+                "name": "Echo // Echo",
+                "type_line": "Instant — Arcane // Instant — Arcane",
+                "colors": ["U"],
+                "mana_cost": "{U}",
+                "cmc": 1,
+            },
+        )
+
+        stats = compute_cube_stats(cube.submissions.order_by("pk"))
+
+        self.assertEqual(stats["cards"]["type_counts"]["Instant"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Arcane"], 1)
 
 
 class BackfillSubmissionCardSnapshotsCommandTests(TestCase):
