@@ -1,6 +1,9 @@
+from functools import partial
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -9,6 +12,7 @@ from django.views.generic.base import TemplateView
 
 from .forms import CubeForm, SubmissionForm
 from .models import Cube, Submission
+from .tasks import email_about_submission
 
 
 class CubeListView(LoginRequiredMixin, ListView):
@@ -156,7 +160,14 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
 
         form = SubmissionForm(request.POST, cube=cube, player=request.user)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                submission = form.save()
+                transaction.on_commit(partial(
+                    email_about_submission.enqueue,
+                    submission_id=submission.id,
+                    url_base=request._current_scheme_host,
+                ))
+
             messages.success(request, "Card submitted.")
             return redirect("cube-detail", pk=cube.pk)
 

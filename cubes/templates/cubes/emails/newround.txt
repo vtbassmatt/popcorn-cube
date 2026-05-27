@@ -1,0 +1,9 @@
+::: POPCORN CUBE :::
+
+:: {{ submission.cube.name }} ::
+
+{% firstof submission.player.get_short_name submission.player.get_username %}'s submission completes round {{ submission.round_number }}.
+
+Now we move to round {{ submission.cube.current_round }}.
+
+When you're ready to submit your pick, go here: {{ url_base }}{% url 'cube-detail' submission.cube.pk %}

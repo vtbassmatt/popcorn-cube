@@ -1,0 +1,6 @@
+{% extends 'cubes/emails/base.html' %}
+{% block content %}
+<h1>{{ submission.cube.name }}</h1>
+<p>With {% firstof submission.player.get_short_name submission.player.get_username %}'s submission, this cube is complete!</p>
+<p>You can view it here: <a href="{{ url_base }}{% url 'cube-detail' submission.cube.pk %}" target="_blank" style="color:#66cccc; text-decoration:underline;">{{ submission.cube.name }}</a></p>
+{% endblock %}
