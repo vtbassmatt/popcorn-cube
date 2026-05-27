@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
+from .card_snapshot import build_card_snapshot
 from .models import Cube, Submission
 from .scryfall import fetch_card_by_name, is_card_legal_for_format
 
@@ -79,6 +80,7 @@ class SubmissionForm(Bs5ModelFormBase):
         instance.round_number = self.cube.current_round
         if self.card_data:
             instance.scryfall_id = self.card_data.get("id", "")
+            instance.card_snapshot = build_card_snapshot(self.card_data)
         if commit:
             instance.full_clean()
             instance.save()

@@ -12,7 +12,10 @@ from django.views.generic.base import TemplateView
 
 from .forms import CubeForm, SubmissionForm
 from .models import Cube, Submission
+from .stats import compute_cube_stats
 from .tasks import email_about_submission
+
+FIRST_ROUND_WITH_STATS_DISPLAY = 2
 
 
 class CubeListView(LoginRequiredMixin, ListView):
@@ -96,6 +99,8 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         complete_submissions = list(
             cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
         )
+        has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
+        cube_stats = compute_cube_stats(complete_submissions) if has_stats else None
         round_rows = []
         alphabetical_submissions = []
         if not cube.is_open:
@@ -137,6 +142,8 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                 "results_participants": participants,
                 "round_rows": round_rows,
                 "alphabetical_submissions": alphabetical_submissions,
+                "has_stats": has_stats,
+                "cube_stats": cube_stats,
             }
         )
         return context

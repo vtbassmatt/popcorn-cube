@@ -1,13 +1,16 @@
 from unittest.mock import patch
+from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .forms import SubmissionForm
 from .models import Cube, Submission
+from .stats import compute_cube_stats
 from .tasks import _send_cubecomplete_emails, _send_newround_emails
 
 User = get_user_model()
@@ -250,7 +253,15 @@ class CubeDetailViewTests(TestCase):
 
     @patch("cubes.forms.fetch_card_by_name")
     def test_detail_page_post_submits_card(self, mock_fetch):
-        mock_fetch.return_value = {"id": "abc123", "name": "Opt", "legalities": {"modern": "legal"}}
+        mock_fetch.return_value = {
+            "id": "abc123",
+            "name": "Opt",
+            "legalities": {"modern": "legal"},
+            "mana_cost": "{U}",
+            "type_line": "Instant",
+            "colors": ["U"],
+            "cmc": 1,
+        }
         self.client.login(username="owner", password="pass")
 
         response = self.client.post(
@@ -260,8 +271,54 @@ class CubeDetailViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(Submission.objects.filter(cube=self.cube, player=self.owner, card_name="Opt").exists())
+        submission = Submission.objects.get(cube=self.cube, player=self.owner, card_name="Opt")
+        self.assertEqual(submission.card_snapshot["name"], "Opt")
         self.assertContains(response, "Card submitted.")
+
+    def test_cube_stats_are_available_after_first_round(self):
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Savannah Lions",
+            card_snapshot={
+                "name": "Savannah Lions",
+                "type_line": "Creature — Cat",
+                "colors": ["W"],
+                "mana_cost": "{W}",
+                "cmc": 1,
+                "power": "2",
+                "toughness": "1",
+            },
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Fire // Ice",
+            card_snapshot={
+                "name": "Fire // Ice",
+                "type_line": "Instant",
+                "colors": ["U", "R"],
+                "mana_cost": "{1}{U}{R}",
+                "cmc": 2,
+                "card_faces": [
+                    {"name": "Fire", "type_line": "Instant", "colors": ["R"], "mana_cost": "{1}{R}", "cmc": 2},
+                    {"name": "Ice", "type_line": "Instant", "colors": ["U"], "mana_cost": "{1}{U}", "cmc": 2},
+                ],
+            },
+        )
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertTrue(response.context["has_stats"])
+        self.assertEqual(response.context["cube_stats"]["card_count"], 2)
+        self.assertEqual(response.context["cube_stats"]["face_count"], 3)
+        self.assertContains(response, "Cube stats")
+        self.assertContains(response, "cdn.jsdelivr.net/npm/chart.js")
+        self.assertContains(response, "cards-inclusive-chart")
+        self.assertContains(response, "faces-pip-chart")
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
@@ -348,6 +405,157 @@ class HowItWorksPageTests(TestCase):
         self.assertContains(response, reverse("how-this-works"))
 
 
+class CubeStatsTests(TestCase):
+    def test_compute_cube_stats_supports_card_and_face_counts(self):
+        owner = User.objects.create_user(username="stats-owner", password="pass")
+        other = User.objects.create_user(username="stats-other", password="pass")
+        cube = Cube.objects.create(name="Stats Cube", owner=owner, max_cards=4)
+        cube.participants.add(other)
+        Submission.objects.create(
+            cube=cube,
+            player=owner,
+            round_number=1,
+            card_name="Arcbound Tracker",
+            card_snapshot={
+                "name": "Arcbound Tracker",
+                "type_line": "Artifact Creature — Human Warrior",
+                "colors": [],
+                "mana_cost": "{2}{W/U}{W/P}{S}{C}",
+                "cmc": 4,
+                "power": "2",
+                "toughness": "2",
+            },
+        )
+        Submission.objects.create(
+            cube=cube,
+            player=other,
+            round_number=1,
+            card_name="Fire // Ice",
+            card_snapshot={
+                "name": "Fire // Ice",
+                "type_line": "Instant",
+                "colors": ["U", "R"],
+                "mana_cost": "{1}{U}{R}",
+                "cmc": 2,
+                "card_faces": [
+                    {"name": "Fire", "type_line": "Instant", "colors": ["R"], "mana_cost": "{1}{R}", "cmc": 2},
+                    {"name": "Ice", "type_line": "Instant", "colors": ["U"], "mana_cost": "{1}{U}", "cmc": 2},
+                ],
+            },
+        )
+
+        stats = compute_cube_stats(cube.submissions.order_by("pk"))
+
+        self.assertEqual(stats["card_count"], 2)
+        self.assertEqual(stats["face_count"], 3)
+        self.assertEqual(stats["cards"]["type_counts"]["Artifact"], 1)
+        self.assertEqual(stats["cards"]["type_counts"]["Creature"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Human"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Warrior"], 1)
+        self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["Colorless"], 1)
+        self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["UR"], 1)
+        self.assertNotIn("W", stats["cards"]["color_breakdown"]["inclusive"])
+        self.assertEqual(stats["cards"]["color_breakdown"]["inclusive"]["U"], 1)
+        self.assertEqual(stats["cards"]["mana_pips"]["C"], 1)
+        self.assertEqual(stats["cards"]["mana_pips"]["S"], 1)
+        self.assertEqual(stats["cards"]["mana_pips"]["W/U"], 1)
+        self.assertEqual(stats["cards"]["mana_pips"]["W"], 1)
+        self.assertEqual(stats["cards"]["mana_value"]["overall"]["count_by_value"][2], 1)
+        self.assertEqual(stats["cards"]["mana_value"]["overall"]["count_by_value"][4], 1)
+        self.assertEqual(stats["faces"]["color_breakdown"]["strict"]["R"], 1)
+        self.assertEqual(stats["faces"]["color_breakdown"]["strict"]["U"], 1)
+
+    def test_compute_cube_stats_orders_color_outputs_for_display(self):
+        owner = User.objects.create_user(username="order-owner", password="pass")
+        cube = Cube.objects.create(name="Order Cube", owner=owner, max_cards=20)
+        cube.participants.add(owner)
+
+        snapshots = [
+            {"colors": ["W"], "mana_cost": "{W}", "cmc": 1},
+            {"colors": ["U"], "mana_cost": "{U}", "cmc": 1},
+            {"colors": ["B"], "mana_cost": "{B}", "cmc": 1},
+            {"colors": ["R"], "mana_cost": "{R}", "cmc": 1},
+            {"colors": ["G"], "mana_cost": "{G}", "cmc": 1},
+            {"colors": ["W", "U"], "mana_cost": "{W/U}", "cmc": 2},
+            {"colors": ["U", "B"], "mana_cost": "{U/B}", "cmc": 2},
+            {"colors": ["B", "R"], "mana_cost": "{B/R}", "cmc": 2},
+            {"colors": ["R", "G"], "mana_cost": "{R/G}", "cmc": 2},
+            {"colors": ["G", "W"], "mana_cost": "{G/W}", "cmc": 2},
+            {"colors": ["W", "B"], "mana_cost": "{W/B}", "cmc": 2},
+            {"colors": ["U", "R"], "mana_cost": "{U/R}", "cmc": 2},
+            {"colors": ["B", "G"], "mana_cost": "{B/G}", "cmc": 2},
+            {"colors": ["R", "W"], "mana_cost": "{R/W}", "cmc": 2},
+            {"colors": ["G", "U"], "mana_cost": "{G/U}", "cmc": 2},
+            {"colors": ["B", "W", "U"], "mana_cost": "{W}{U}{B}", "cmc": 3},
+            {"colors": [], "mana_cost": "{C}{S}", "cmc": 2},
+        ]
+
+        for round_number, snapshot in enumerate(snapshots, start=1):
+            Submission.objects.create(
+                cube=cube,
+                player=owner,
+                round_number=round_number,
+                card_name=f"Card {round_number}",
+                card_snapshot={
+                    "name": f"Card {round_number}",
+                    "type_line": "Instant",
+                    **snapshot,
+                },
+            )
+
+        stats = compute_cube_stats(cube.submissions.order_by("pk"))
+
+        self.assertEqual(
+            list(stats["cards"]["color_breakdown"]["strict"].keys()),
+            ["W", "U", "B", "R", "G", "WU", "UB", "BR", "RG", "GW", "WB", "UR", "BG", "RW", "GU", "WUB", "Colorless"],
+        )
+        self.assertEqual(list(stats["cards"]["color_breakdown"]["inclusive"].keys()), ["W", "U", "B", "R", "G", "Colorless"])
+        self.assertEqual(
+            list(stats["cards"]["mana_pips"].keys()),
+            ["W", "U", "B", "R", "G", "W/U", "U/B", "B/R", "R/G", "G/W", "W/B", "U/R", "B/G", "R/W", "G/U", "C", "S"],
+        )
+
+
+class BackfillSubmissionCardSnapshotsCommandTests(TestCase):
+    @patch("cubes.management.commands.backfill_submission_card_snapshots.fetch_card_by_name")
+    @patch("cubes.management.commands.backfill_submission_card_snapshots.fetch_card_by_id")
+    def test_backfill_submission_card_snapshots_updates_missing_snapshots(self, mock_fetch_by_id, mock_fetch_by_name):
+        owner = User.objects.create_user(username="cmd-owner", password="pass")
+        other = User.objects.create_user(username="cmd-other", password="pass")
+        cube = Cube.objects.create(name="Command Cube", owner=owner, max_cards=4)
+        cube.participants.add(other)
+        with_id = Submission.objects.create(
+            cube=cube,
+            player=owner,
+            round_number=1,
+            card_name="Opt",
+            scryfall_id="opt-id",
+        )
+        with_name = Submission.objects.create(
+            cube=cube,
+            player=other,
+            round_number=1,
+            card_name="Bolt",
+        )
+
+        mock_fetch_by_id.return_value = {"id": "opt-id", "name": "Opt", "type_line": "Instant", "mana_cost": "{U}", "cmc": 1}
+        mock_fetch_by_name.return_value = {
+            "id": "bolt-id",
+            "name": "Bolt",
+            "type_line": "Instant",
+            "mana_cost": "{R}",
+            "colors": ["R"],
+            "cmc": 1,
+        }
+        stdout = StringIO()
+
+        call_command("backfill_submission_card_snapshots", stdout=stdout)
+
+        with_id.refresh_from_db()
+        with_name.refresh_from_db()
+        self.assertEqual(with_id.card_snapshot["name"], "Opt")
+        self.assertEqual(with_name.card_snapshot["name"], "Bolt")
+        self.assertIn("Updated: 2. Skipped: 0.", stdout.getvalue())
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", EMAIL_FROM="test@example.com")
 class RoundCloseEmailTests(TestCase):
     def setUp(self):
