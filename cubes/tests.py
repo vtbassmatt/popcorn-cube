@@ -369,6 +369,7 @@ class CubeDetailViewTests(TestCase):
         self.assertTrue(response.context["has_stats"])
         self.assertEqual(response.context["cube_stats"]["card_count"], 2)
         self.assertEqual(response.context["cube_stats"]["cards"]["type_counts"], {"Creature": 1, "Instant": 1})
+        self.assertEqual(response.context["cube_stats"]["cards"]["subtype_counts"], {"Cat": 1})
         self.assertNotIn("Wizard", response.context["cube_stats"]["cards"]["subtype_counts"])
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):

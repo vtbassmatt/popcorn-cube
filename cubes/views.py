@@ -99,17 +99,13 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         ordered_submissions = cube.submissions.select_related("player").order_by(
             "round_number", "player__username", "created_at"
         )
+        round_rows = []
+        alphabetical_submissions = []
         if cube.is_open:
             stats_submissions = list(ordered_submissions.filter(round_number__lt=current_round))
-            display_submissions = []
         else:
             display_submissions = list(ordered_submissions)
             stats_submissions = display_submissions
-        has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
-        cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
-        round_rows = []
-        alphabetical_submissions = []
-        if not cube.is_open:
             submissions_by_round = {}
             for submission in display_submissions:
                 submissions_by_round.setdefault(submission.round_number, {})[submission.player_id] = submission
@@ -128,6 +124,8 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                     submission.round_number,
                 ),
             )
+        has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
+        cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
         # POST re-renders this view with a bound form on validation errors.
         form = kwargs.get("form", None)
         if can_submit and form is None:
