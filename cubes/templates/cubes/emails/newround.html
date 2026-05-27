@@ -1,0 +1,7 @@
+{% extends 'cubes/emails/base.html' %}
+{% block content %}
+<h1>{{ submission.cube.name }}</h1>
+<p>{% firstof submission.player.get_short_name submission.player.get_username %}'s submission completes round {{ submission.round_number }}.</p>
+<p>Now we move to round {{ submission.cube.current_round }}.</p>
+<p>When you're ready to submit your pick, go here: <a href="{{ url_base }}{% url 'cube-detail' submission.cube.pk %}" target="_blank" style="color:#66cccc; text-decoration:underline;">{{ submission.cube.name }}</a></p>
+{% endblock %}

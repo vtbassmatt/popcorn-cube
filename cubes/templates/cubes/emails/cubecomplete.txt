@@ -1,0 +1,7 @@
+::: POPCORN CUBE :::
+
+:: {{ submission.cube.name }} ::
+
+With {% firstof submission.player.get_short_name submission.player.get_username %}'s submission, this cube is complete!
+
+You can view it here: {{ url_base }}{% url 'cube-detail' submission.cube.pk %}
