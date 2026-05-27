@@ -298,7 +298,7 @@ class CubeDetailViewTests(TestCase):
             card_name="Fire // Ice",
             card_snapshot={
                 "name": "Fire // Ice",
-                "type_line": "Instant",
+                "type_line": "Instant // Sorcery — Fuse",
                 "colors": ["U", "R"],
                 "mana_cost": "{1}{U}{R}",
                 "cmc": 2,
@@ -319,6 +319,58 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "cdn.jsdelivr.net/npm/chart.js")
         self.assertContains(response, "cards-inclusive-chart")
         self.assertContains(response, "faces-pip-chart")
+        self.assertContains(response, "<summary>Subtypes</summary>")
+        self.assertContains(response, "beginAtZero: true")
+
+    def test_cube_stats_ignore_incomplete_current_round(self):
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Savannah Lions",
+            card_snapshot={
+                "name": "Savannah Lions",
+                "type_line": "Creature — Cat",
+                "colors": ["W"],
+                "mana_cost": "{W}",
+                "cmc": 1,
+            },
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Lightning Bolt",
+            card_snapshot={
+                "name": "Lightning Bolt",
+                "type_line": "Instant",
+                "colors": ["R"],
+                "mana_cost": "{R}",
+                "cmc": 1,
+            },
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=2,
+            card_name="Raffine's Informant",
+            card_snapshot={
+                "name": "Raffine's Informant",
+                "type_line": "Creature — Human Wizard",
+                "colors": ["W"],
+                "mana_cost": "{1}{W}",
+                "cmc": 2,
+            },
+        )
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertTrue(response.context["has_stats"])
+        self.assertEqual(response.context["cube_stats"]["card_count"], 2)
+        self.assertEqual(response.context["cube_stats"]["cards"]["type_counts"], {"Creature": 1, "Instant": 1})
+        self.assertEqual(response.context["cube_stats"]["cards"]["subtype_counts"], {"Cat": 1})
+        self.assertNotIn("Wizard", response.context["cube_stats"]["cards"]["subtype_counts"])
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
@@ -433,7 +485,7 @@ class CubeStatsTests(TestCase):
             card_name="Fire // Ice",
             card_snapshot={
                 "name": "Fire // Ice",
-                "type_line": "Instant",
+                "type_line": "Instant // Sorcery — Fuse",
                 "colors": ["U", "R"],
                 "mana_cost": "{1}{U}{R}",
                 "cmc": 2,
@@ -450,8 +502,13 @@ class CubeStatsTests(TestCase):
         self.assertEqual(stats["face_count"], 3)
         self.assertEqual(stats["cards"]["type_counts"]["Artifact"], 1)
         self.assertEqual(stats["cards"]["type_counts"]["Creature"], 1)
+        self.assertEqual(stats["cards"]["type_counts"]["Instant"], 1)
+        self.assertEqual(stats["cards"]["type_counts"]["Sorcery"], 1)
         self.assertEqual(stats["cards"]["subtype_counts"]["Human"], 1)
         self.assertEqual(stats["cards"]["subtype_counts"]["Warrior"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Fuse"], 1)
+        self.assertNotIn("//", stats["cards"]["subtype_counts"])
+        self.assertNotIn("—", stats["cards"]["subtype_counts"])
         self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["Colorless"], 1)
         self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["UR"], 1)
         self.assertNotIn("W", stats["cards"]["color_breakdown"]["inclusive"])
@@ -514,6 +571,29 @@ class CubeStatsTests(TestCase):
             list(stats["cards"]["mana_pips"].keys()),
             ["W", "U", "B", "R", "G", "W/U", "U/B", "B/R", "R/G", "G/W", "W/B", "U/R", "B/G", "R/W", "G/U", "C", "S"],
         )
+
+    def test_compute_cube_stats_deduplicates_split_card_type_and_subtype_tokens(self):
+        owner = User.objects.create_user(username="dedupe-owner", password="pass")
+        cube = Cube.objects.create(name="Dedupe Cube", owner=owner, max_cards=2)
+        cube.participants.add(owner)
+        Submission.objects.create(
+            cube=cube,
+            player=owner,
+            round_number=1,
+            card_name="Echo // Echo",
+            card_snapshot={
+                "name": "Echo // Echo",
+                "type_line": "Instant — Arcane // Instant — Arcane",
+                "colors": ["U"],
+                "mana_cost": "{U}",
+                "cmc": 1,
+            },
+        )
+
+        stats = compute_cube_stats(cube.submissions.order_by("pk"))
+
+        self.assertEqual(stats["cards"]["type_counts"]["Instant"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Arcane"], 1)
 
 
 class BackfillSubmissionCardSnapshotsCommandTests(TestCase):

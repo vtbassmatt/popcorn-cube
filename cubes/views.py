@@ -96,16 +96,18 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             for participant in participants
             if participant.pk != self.request.user.pk and participant.pk not in current_round_submitted_player_ids
         ]
-        complete_submissions = list(
-            cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
+        ordered_submissions = cube.submissions.select_related("player").order_by(
+            "round_number", "player__username", "created_at"
         )
-        has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
-        cube_stats = compute_cube_stats(complete_submissions) if has_stats else None
         round_rows = []
         alphabetical_submissions = []
-        if not cube.is_open:
+        if cube.is_open:
+            stats_submissions = list(ordered_submissions.filter(round_number__lt=current_round))
+        else:
+            display_submissions = list(ordered_submissions)
+            stats_submissions = display_submissions
             submissions_by_round = {}
-            for submission in complete_submissions:
+            for submission in display_submissions:
                 submissions_by_round.setdefault(submission.round_number, {})[submission.player_id] = submission
             for round_number in sorted(submissions_by_round):
                 round_rows.append(
@@ -115,13 +117,15 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
                     }
                 )
             alphabetical_submissions = sorted(
-                complete_submissions,
+                display_submissions,
                 key=lambda submission: (
                     submission.card_name.lower(),
                     submission.player.username.lower(),
                     submission.round_number,
                 ),
             )
+        has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
+        cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
         # POST re-renders this view with a bound form on validation errors.
         form = kwargs.get("form", None)
         if can_submit and form is None:

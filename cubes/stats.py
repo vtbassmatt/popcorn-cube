@@ -127,9 +127,19 @@ def _iter_faces(snapshot: dict[str, Any]):
 def _extract_types(type_line: Any) -> tuple[list[str], list[str]]:
     if not isinstance(type_line, str) or not type_line:
         return [], []
-    main, _, subtype_line = type_line.partition("—")
-    card_types = [token for token in main.split() if token in CARD_TYPES]
-    subtypes = [token for token in subtype_line.split() if token]
+    card_types: list[str] = []
+    subtypes: list[str] = []
+
+    # Parse both single-faced and split-card type lines by handling each "//" segment
+    # and extracting subtypes only from the em-dash section for that segment.
+    for card_part in type_line.split("//"):
+        main, _, subtype_line = card_part.strip().partition("—")
+        card_types.extend(token for token in main.split() if token in CARD_TYPES)
+        subtypes.extend(token for token in subtype_line.split() if token)
+
+    # Deduplicate while preserving the first-seen order from the type line.
+    card_types = list(dict.fromkeys(card_types))
+    subtypes = list(dict.fromkeys(subtypes))
     return card_types, subtypes
 
 
