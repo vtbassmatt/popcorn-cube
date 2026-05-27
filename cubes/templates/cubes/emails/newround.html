@@ -2,6 +2,21 @@
 {% block content %}
 <h1>{{ submission.cube.name }}</h1>
 <p>{% firstof submission.player.get_short_name submission.player.get_username %}'s submission completes round {{ submission.round_number }}.</p>
+<h2>Cards selected this round</h2>
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; max-width:560px; margin:0 0 16px 0; border:1px solid #d9d9d9;">
+  <tr>
+    <th align="left" style="padding:8px; border-bottom:1px solid #d9d9d9;">Player</th>
+    <th align="left" style="padding:8px; border-bottom:1px solid #d9d9d9;">Card</th>
+  </tr>
+  {% for selected_submission in round_submissions %}
+  <tr>
+    <td style="padding:8px; border-bottom:1px solid #efefef;">{% firstof selected_submission.player.get_short_name selected_submission.player.get_username %}</td>
+    <td style="padding:8px; border-bottom:1px solid #efefef;">
+      <a href="{{ selected_submission.scryfall_url }}" target="_blank" rel="noopener noreferrer" style="color:#66cccc; text-decoration:none; font-size:12px;">{{ selected_submission.card_name }}</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
 <p>Now we move to round {{ submission.cube.current_round }}.</p>
 <p>When you're ready to submit your pick, go here: <a href="{{ url_base }}{% url 'cube-detail' submission.cube.pk %}" target="_blank" style="color:#66cccc; text-decoration:underline;">{{ submission.cube.name }}</a></p>
 {% endblock %}

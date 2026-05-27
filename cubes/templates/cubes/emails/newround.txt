@@ -4,6 +4,10 @@
 
 {% firstof submission.player.get_short_name submission.player.get_username %}'s submission completes round {{ submission.round_number }}.
 
+Cards selected this round:
+{% for selected_submission in round_submissions %}
+- {% firstof selected_submission.player.get_short_name selected_submission.player.get_username %}: {{ selected_submission.card_name }}
+{% endfor %}
 Now we move to round {{ submission.cube.current_round }}.
 
 When you're ready to submit your pick, go here: {{ url_base }}{% url 'cube-detail' submission.cube.pk %}
