@@ -87,6 +87,8 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_FROM = config("EMAIL_FROM", default="no-one@example.org")
+# mid-round emails are noisy, so they're disabled by default
+EMAIL_SEND_MIDROUND = False
 
 
 AUTH_PASSWORD_VALIDATORS = [
