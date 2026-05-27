@@ -93,6 +93,7 @@ class Submission(models.Model):
     round_number = models.PositiveIntegerField()
     card_name = models.CharField(max_length=200)
     scryfall_id = models.CharField(max_length=64, blank=True)
+    card_snapshot = models.JSONField(default=dict, blank=True)
     related_to = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

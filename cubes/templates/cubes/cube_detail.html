@@ -10,6 +10,82 @@
   <div class="col-md-4"><div class="card card-body"><strong>Max copies per card</strong><span>{% if cube.max_count_per_card == 0 %}Unlimited{% else %}{{ cube.max_count_per_card }}{% endif %}</span></div></div>
 </div>
 
+{% if has_stats and cube_stats %}
+  <h2 class="h5">Cube stats</h2>
+  <p class="text-muted">Cards: {{ cube_stats.card_count }} · Faces: {{ cube_stats.face_count }}</p>
+  <div class="row g-3 mb-4">
+    {% for scope_name, scope_stats in cube_stats.items %}
+      {% if scope_name == "cards" or scope_name == "faces" %}
+        <div class="col-12">
+          <div class="card card-body">
+            <h3 class="h6 text-uppercase">{{ scope_name }}</h3>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <strong>Types</strong>
+                <ul class="mb-0">
+                  {% for key, value in scope_stats.type_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                </ul>
+              </div>
+              <div class="col-md-4">
+                <strong>Subtypes</strong>
+                <ul class="mb-0">
+                  {% for key, value in scope_stats.subtype_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                </ul>
+              </div>
+              <div class="col-md-4">
+                <strong>Mana pips</strong>
+                <ul class="mb-0">
+                  {% for key, value in scope_stats.mana_pips.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <strong>Color breakdown (strict)</strong>
+                <ul class="mb-0">
+                  {% for key, value in scope_stats.color_breakdown.strict.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <strong>Color breakdown (inclusive)</strong>
+                <ul class="mb-0">
+                  {% for key, value in scope_stats.color_breakdown.inclusive.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                </ul>
+              </div>
+              {% for metric_name, metric_data in scope_stats.items %}
+                {% if metric_name == "mana_value" or metric_name == "power" or metric_name == "toughness" %}
+                  <div class="col-12">
+                    <strong>{{ metric_name|title }}</strong>
+                    <p class="mb-1">Count: {{ metric_data.overall.count }} · Mean: {{ metric_data.overall.mean|floatformat:2 }} · Std dev: {{ metric_data.overall.std_dev|floatformat:2 }}</p>
+                    <div class="row g-2">
+                      <div class="col-md-4">
+                        <small class="text-muted">By value</small>
+                        <ul class="mb-0">
+                          {% for key, value in metric_data.overall.count_by_value.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                        </ul>
+                      </div>
+                      <div class="col-md-4">
+                        <small class="text-muted">By color</small>
+                        <ul class="mb-0">
+                          {% for key, value in metric_data.by_color.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
+                        </ul>
+                      </div>
+                      <div class="col-md-4">
+                        <small class="text-muted">By color combination</small>
+                        <ul class="mb-0">
+                          {% for key, value in metric_data.by_color_combination.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+
 {% if current_round > 1 and cube.is_open %}
   <h2 class="h5">Previous round cards</h2>
   {% if previous_round_cards %}
