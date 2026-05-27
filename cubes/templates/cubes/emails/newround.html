@@ -7,6 +7,7 @@
   <tr>
     <th align="left" style="padding:8px; border-bottom:1px solid #d9d9d9;">Player</th>
     <th align="left" style="padding:8px; border-bottom:1px solid #d9d9d9;">Card</th>
+    <th align="left" style="padding:8px; border-bottom:1px solid #d9d9d9;">Reason</th>
   </tr>
   {% for selected_submission in round_submissions %}
   <tr>
@@ -14,6 +15,7 @@
     <td style="padding:8px; border-bottom:1px solid #efefef;">
       <a href="{{ selected_submission.scryfall_url }}" target="_blank" rel="noopener noreferrer" style="color:#66cccc; text-decoration:none; font-size:12px;">{{ selected_submission.card_name }}</a>
     </td>
+    <td style="padding:8px; border-bottom:1px solid #efefef;">{{ selected_submission.related_to }}</td>
   </tr>
   {% endfor %}
 </table>
