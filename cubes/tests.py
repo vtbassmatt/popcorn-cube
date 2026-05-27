@@ -316,6 +316,9 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(response.context["cube_stats"]["card_count"], 2)
         self.assertEqual(response.context["cube_stats"]["face_count"], 3)
         self.assertContains(response, "Cube stats")
+        self.assertContains(response, "cdn.jsdelivr.net/npm/chart.js")
+        self.assertContains(response, "cards-inclusive-chart")
+        self.assertContains(response, "faces-pip-chart")
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
@@ -461,6 +464,56 @@ class CubeStatsTests(TestCase):
         self.assertEqual(stats["cards"]["mana_value"]["overall"]["count_by_value"][4], 1)
         self.assertEqual(stats["faces"]["color_breakdown"]["strict"]["R"], 1)
         self.assertEqual(stats["faces"]["color_breakdown"]["strict"]["U"], 1)
+
+    def test_compute_cube_stats_orders_color_outputs_for_display(self):
+        owner = User.objects.create_user(username="order-owner", password="pass")
+        cube = Cube.objects.create(name="Order Cube", owner=owner, max_cards=20)
+        cube.participants.add(owner)
+
+        snapshots = [
+            {"colors": ["W"], "mana_cost": "{W}", "cmc": 1},
+            {"colors": ["U"], "mana_cost": "{U}", "cmc": 1},
+            {"colors": ["B"], "mana_cost": "{B}", "cmc": 1},
+            {"colors": ["R"], "mana_cost": "{R}", "cmc": 1},
+            {"colors": ["G"], "mana_cost": "{G}", "cmc": 1},
+            {"colors": ["W", "U"], "mana_cost": "{W/U}", "cmc": 2},
+            {"colors": ["U", "B"], "mana_cost": "{U/B}", "cmc": 2},
+            {"colors": ["B", "R"], "mana_cost": "{B/R}", "cmc": 2},
+            {"colors": ["R", "G"], "mana_cost": "{R/G}", "cmc": 2},
+            {"colors": ["G", "W"], "mana_cost": "{G/W}", "cmc": 2},
+            {"colors": ["W", "B"], "mana_cost": "{W/B}", "cmc": 2},
+            {"colors": ["U", "R"], "mana_cost": "{U/R}", "cmc": 2},
+            {"colors": ["B", "G"], "mana_cost": "{B/G}", "cmc": 2},
+            {"colors": ["R", "W"], "mana_cost": "{R/W}", "cmc": 2},
+            {"colors": ["G", "U"], "mana_cost": "{G/U}", "cmc": 2},
+            {"colors": ["B", "W", "U"], "mana_cost": "{W}{U}{B}", "cmc": 3},
+            {"colors": [], "mana_cost": "{C}{S}", "cmc": 2},
+        ]
+
+        for round_number, snapshot in enumerate(snapshots, start=1):
+            Submission.objects.create(
+                cube=cube,
+                player=owner,
+                round_number=round_number,
+                card_name=f"Card {round_number}",
+                card_snapshot={
+                    "name": f"Card {round_number}",
+                    "type_line": "Instant",
+                    **snapshot,
+                },
+            )
+
+        stats = compute_cube_stats(cube.submissions.order_by("pk"))
+
+        self.assertEqual(
+            list(stats["cards"]["color_breakdown"]["strict"].keys()),
+            ["W", "U", "B", "R", "G", "WU", "UB", "BR", "RG", "GW", "WB", "UR", "BG", "RW", "GU", "WUB", "Colorless"],
+        )
+        self.assertEqual(list(stats["cards"]["color_breakdown"]["inclusive"].keys()), ["W", "U", "B", "R", "G", "Colorless"])
+        self.assertEqual(
+            list(stats["cards"]["mana_pips"].keys()),
+            ["W", "U", "B", "R", "G", "W/U", "U/B", "B/R", "R/G", "G/W", "W/B", "U/R", "B/G", "R/W", "G/U", "C", "S"],
+        )
 
 
 class BackfillSubmissionCardSnapshotsCommandTests(TestCase):

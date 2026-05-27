@@ -4,6 +4,11 @@ from collections import Counter, defaultdict
 from typing import Any
 
 COLOR_ORDER = ("W", "U", "B", "R", "G")
+ALLY_COLOR_PAIR_ORDER = ("WU", "UB", "BR", "RG", "GW")
+ENEMY_COLOR_PAIR_ORDER = ("WB", "UR", "BG", "RW", "GU")
+COLOR_PAIR_ORDER = ALLY_COLOR_PAIR_ORDER + ENEMY_COLOR_PAIR_ORDER
+COLOR_PAIR_BY_SET = {frozenset(pair): pair for pair in COLOR_PAIR_ORDER}
+COLOR_TO_INDEX = {color: index for index, color in enumerate(COLOR_ORDER)}
 CARD_TYPES = {
     "Artifact",
     "Battle",
@@ -33,7 +38,61 @@ def _normalized_colors(colors: Any) -> tuple[str, ...]:
 
 
 def _combo_label(colors: tuple[str, ...]) -> str:
-    return "Colorless" if not colors else "".join(colors)
+    if not colors:
+        return "Colorless"
+    if len(colors) == 2:
+        return COLOR_PAIR_BY_SET.get(frozenset(colors), "".join(colors))
+    return "".join(colors)
+
+
+def _color_combo_sort_key(colors: tuple[str, ...]) -> tuple[Any, ...]:
+    if not colors:
+        return (5, 0)
+
+    if len(colors) == 1:
+        return (0, COLOR_TO_INDEX[colors[0]])
+
+    if len(colors) == 2:
+        combo = COLOR_PAIR_BY_SET.get(frozenset(colors), "".join(colors))
+        if combo in ALLY_COLOR_PAIR_ORDER:
+            return (1, ALLY_COLOR_PAIR_ORDER.index(combo))
+        if combo in ENEMY_COLOR_PAIR_ORDER:
+            return (2, ENEMY_COLOR_PAIR_ORDER.index(combo))
+
+    return (3, len(colors), tuple(COLOR_TO_INDEX[color] for color in colors))
+
+
+def _ordered_color_combo_counts(counts: Counter[tuple[str, ...]]) -> dict[str, int]:
+    return {_combo_label(colors): counts[colors] for colors in sorted(counts, key=_color_combo_sort_key)}
+
+
+def _ordered_inclusive_color_counts(counts: Counter[str]) -> dict[str, int]:
+    ordered = {color: counts[color] for color in COLOR_ORDER if counts[color]}
+    if counts["Colorless"]:
+        ordered["Colorless"] = counts["Colorless"]
+    return ordered
+
+
+def _mana_symbol_sort_key(symbol: str) -> tuple[Any, ...]:
+    if symbol in COLOR_ORDER:
+        return (0, COLOR_TO_INDEX[symbol])
+    if symbol in {"C", "S"}:
+        return (4, symbol)
+    if "/" in symbol:
+        parts = symbol.split("/")
+        if len(parts) == 2 and all(part in COLOR_ORDER for part in parts):
+            combo = COLOR_PAIR_BY_SET.get(frozenset(parts), "".join(color for color in COLOR_ORDER if color in parts))
+            if combo in ALLY_COLOR_PAIR_ORDER:
+                return (1, ALLY_COLOR_PAIR_ORDER.index(combo))
+            if combo in ENEMY_COLOR_PAIR_ORDER:
+                return (2, ENEMY_COLOR_PAIR_ORDER.index(combo))
+            return (3, combo)
+        return (3, symbol)
+    return (5, symbol)
+
+
+def _ordered_mana_pips(counts: Counter[str]) -> dict[str, int]:
+    return {symbol: counts[symbol] for symbol in sorted(counts, key=_mana_symbol_sort_key)}
 
 
 def _iter_faces(snapshot: dict[str, Any]):
@@ -69,6 +128,12 @@ def _add_mana_pips(counter: Counter[str], mana_cost: Any) -> None:
                 counter[color] += 1
             continue
         if "/" in symbol:
+            parts = symbol.split("/")
+            if len(parts) == 2 and all(part in COLOR_ORDER for part in parts):
+                pair = COLOR_PAIR_BY_SET.get(frozenset(parts))
+                if pair:
+                    counter[f"{pair[0]}/{pair[1]}"] += 1
+                    continue
             counter[symbol] += 1
 
 
@@ -99,10 +164,10 @@ def _bucketed_numeric_stats(entries: list[tuple[tuple[str, ...], int]]) -> dict[
     values = [value for _, value in entries]
     by_color: dict[str, list[int]] = {color: [] for color in COLOR_ORDER}
     by_color["Colorless"] = []
-    by_color_combination: dict[str, list[int]] = defaultdict(list)
+    by_color_combination: dict[tuple[str, ...], list[int]] = defaultdict(list)
 
     for colors, value in entries:
-        by_color_combination[_combo_label(colors)].append(value)
+        by_color_combination[colors].append(value)
         if not colors:
             by_color["Colorless"].append(value)
         for color in colors:
@@ -112,8 +177,8 @@ def _bucketed_numeric_stats(entries: list[tuple[tuple[str, ...], int]]) -> dict[
         "overall": _value_stats(values),
         "by_color": {color: _value_stats(by_color[color]) for color in by_color},
         "by_color_combination": {
-            combo: _value_stats(combo_values)
-            for combo, combo_values in sorted(by_color_combination.items(), key=lambda item: item[0])
+            _combo_label(colors): _value_stats(by_color_combination[colors])
+            for colors in sorted(by_color_combination, key=_color_combo_sort_key)
         },
     }
 
@@ -121,7 +186,7 @@ def _bucketed_numeric_stats(entries: list[tuple[tuple[str, ...], int]]) -> dict[
 def _compute_scope_stats(items: list[dict[str, Any]]) -> dict[str, Any]:
     type_counts: Counter[str] = Counter()
     subtype_counts: Counter[str] = Counter()
-    strict_color_counts: Counter[str] = Counter()
+    strict_color_counts: Counter[tuple[str, ...]] = Counter()
     inclusive_color_counts: Counter[str] = Counter()
     mana_pip_counts: Counter[str] = Counter()
 
@@ -137,7 +202,7 @@ def _compute_scope_stats(items: list[dict[str, Any]]) -> dict[str, Any]:
                 face_colors.update(_normalized_colors(face.get("colors")))
             colors = tuple(color for color in COLOR_ORDER if color in face_colors)
 
-        strict_color_counts[_combo_label(colors)] += 1
+        strict_color_counts[colors] += 1
         if colors:
             for color in colors:
                 inclusive_color_counts[color] += 1
@@ -165,10 +230,10 @@ def _compute_scope_stats(items: list[dict[str, Any]]) -> dict[str, Any]:
         "type_counts": dict(sorted(type_counts.items(), key=lambda item: item[0])),
         "subtype_counts": dict(sorted(subtype_counts.items(), key=lambda item: item[0])),
         "color_breakdown": {
-            "strict": dict(sorted(strict_color_counts.items(), key=lambda item: item[0])),
-            "inclusive": dict(sorted(inclusive_color_counts.items(), key=lambda item: item[0])),
+            "strict": _ordered_color_combo_counts(strict_color_counts),
+            "inclusive": _ordered_inclusive_color_counts(inclusive_color_counts),
         },
-        "mana_pips": dict(sorted(mana_pip_counts.items(), key=lambda item: item[0])),
+        "mana_pips": _ordered_mana_pips(mana_pip_counts),
         "mana_value": _bucketed_numeric_stats(mana_value_entries),
         "power": _bucketed_numeric_stats(power_entries),
         "toughness": _bucketed_numeric_stats(toughness_entries),
