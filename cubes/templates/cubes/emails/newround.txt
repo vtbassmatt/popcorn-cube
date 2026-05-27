@@ -6,7 +6,7 @@
 
 Cards selected this round:
 {% for selected_submission in round_submissions %}
-- {% firstof selected_submission.player.get_short_name selected_submission.player.get_username %}: {{ selected_submission.card_name }}
+- {% firstof selected_submission.player.get_short_name selected_submission.player.get_username %}: {{ selected_submission.card_name }}{% if selected_submission.related_to %} ({{ selected_submission.related_to }}){% endif %}
 {% endfor %}
 Now we move to round {{ submission.cube.current_round }}.
 
