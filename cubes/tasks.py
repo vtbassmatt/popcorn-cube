@@ -45,7 +45,10 @@ def _send_midround_emails(submission: Submission, url_base: str):
 
 def _send_newround_emails(submission: Submission, url_base: str):
     subject = f"[Popcorn Cube] Round {submission.cube.current_round} for {submission.cube.name} starts now"
-    return _send_email(submission, url_base, 'newround', subject)
+    round_submissions = list(
+        submission.cube.submissions.filter(round_number=submission.round_number).select_related("player")
+    )
+    return _send_email(submission, url_base, 'newround', subject, {'round_submissions': round_submissions})
 
 
 def _send_cubecomplete_emails(submission: Submission, url_base: str):

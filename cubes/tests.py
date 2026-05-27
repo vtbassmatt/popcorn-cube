@@ -1,12 +1,14 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
 from .forms import SubmissionForm
 from .models import Cube, Submission
+from .tasks import email_about_submission
 
 User = get_user_model()
 
@@ -305,3 +307,43 @@ class HowItWorksPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("how-this-works"))
+
+
+class EmailTaskTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass", first_name="Alice", email="owner@example.com")
+        self.other = User.objects.create_user(username="other", password="pass", first_name="Bob", email="other@example.com")
+        self.cube = Cube.objects.create(name="Email Cube", owner=self.owner, max_cards=6)
+        self.cube.participants.add(self.other)
+
+    def test_new_round_email_includes_selected_cards_and_scryfall_links(self):
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Lightning Bolt",
+            scryfall_id="owner-card-id",
+        )
+        final_submission = Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Counterspell",
+            scryfall_id="other-card-id",
+        )
+
+        email_about_submission.call(submission_id=final_submission.pk, url_base="https://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertIn("Cards selected in round 1:", message.body)
+        self.assertIn("Alice: Lightning Bolt", message.body)
+        self.assertIn("Bob: Counterspell", message.body)
+        self.assertEqual(len(message.alternatives), 1)
+        html_body = message.alternatives[0][0]
+        self.assertIn("<table", html_body)
+        self.assertIn("Lightning Bolt", html_body)
+        self.assertIn("Counterspell", html_body)
+        self.assertIn('href="https://scryfall.com/card/owner-card-id"', html_body)
+        self.assertIn('href="https://scryfall.com/card/other-card-id"', html_body)
+        self.assertIn("(Scryfall)", html_body)
