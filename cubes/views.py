@@ -96,14 +96,13 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
             for participant in participants
             if participant.pk != self.request.user.pk and participant.pk not in current_round_submitted_player_ids
         ]
-        complete_submissions = list(
-            cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
+        ordered_submissions = cube.submissions.select_related("player").order_by(
+            "round_number", "player__username", "created_at"
         )
+        complete_submissions = list(ordered_submissions)
         stats_submissions = complete_submissions
         if cube.is_open:
-            stats_submissions = [
-                submission for submission in complete_submissions if submission.round_number < current_round
-            ]
+            stats_submissions = list(ordered_submissions.filter(round_number__lt=current_round))
         has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
         cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
         round_rows = []
