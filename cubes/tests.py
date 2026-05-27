@@ -25,6 +25,27 @@ class CubeModelTests(TestCase):
         cube.save()
         self.assertEqual(cube.effective_max_cards, 12)
 
+    def test_format_legality_scryfall_url_returns_none_when_no_format(self):
+        owner = User.objects.create_user(username="owner2", password="pass")
+        cube = Cube.objects.create(name="Test Cube", owner=owner)
+        self.assertIsNone(cube.format_legality_scryfall_url)
+
+    def test_format_legality_scryfall_url_for_commander_uses_edh(self):
+        owner = User.objects.create_user(username="owner3", password="pass")
+        cube = Cube.objects.create(name="Test Cube", owner=owner, format_legality="commander")
+        url = cube.format_legality_scryfall_url
+        self.assertIn("scryfall.com/search", url)
+        self.assertIn("f%3Aedh", url)
+        self.assertIn("in%3Apaper", url)
+
+    def test_format_legality_scryfall_url_for_modern(self):
+        owner = User.objects.create_user(username="owner4", password="pass")
+        cube = Cube.objects.create(name="Test Cube", owner=owner, format_legality="modern")
+        url = cube.format_legality_scryfall_url
+        self.assertIn("scryfall.com/search", url)
+        self.assertIn("f%3Amodern", url)
+        self.assertIn("in%3Apaper", url)
+
 
 class SubmissionRuleTests(TestCase):
     def setUp(self):
@@ -130,6 +151,24 @@ class CubeDetailViewTests(TestCase):
         self.other = User.objects.create_user(username="other", password="pass")
         self.cube = Cube.objects.create(name="View Cube", owner=self.owner, max_cards=6)
         self.cube.participants.add(self.other)
+
+    def test_detail_page_shows_format_legality_link(self):
+        self.cube.format_legality = "commander"
+        self.cube.save()
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertContains(response, 'href="https://scryfall.com/search?q=f%3Aedh+in%3Apaper"')
+        self.assertContains(response, "Commander")
+
+    def test_detail_page_shows_any_when_no_format_legality(self):
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertContains(response, "Any")
+        self.assertNotContains(response, "scryfall.com/search?q=f%3A")
 
     def test_previous_round_cards_include_scryfall_links(self):
         Submission.objects.create(
