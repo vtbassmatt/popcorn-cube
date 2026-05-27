@@ -13,6 +13,7 @@
     <td style="padding:8px; border-bottom:1px solid #efefef;">{% firstof selected_submission.player.get_short_name selected_submission.player.get_username %}</td>
     <td style="padding:8px; border-bottom:1px solid #efefef;">
       <a href="{{ selected_submission.scryfall_url }}" target="_blank" rel="noopener noreferrer" style="color:#66cccc; text-decoration:none; font-size:12px;">{{ selected_submission.card_name }}</a>
+      {% if selected_submission.related_to %}<div><small style="color:#999999; font-size:11px;">{{ selected_submission.related_to }}</small></div>{% endif %}
     </td>
   </tr>
   {% endfor %}

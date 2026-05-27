@@ -56,7 +56,13 @@ def _send_newround_emails(submission: Submission, url_base: str):
 
 def _send_cubecomplete_emails(submission: Submission, url_base: str):
     subject = f"[Popcorn Cube] {submission.cube.name} is complete"
-    return _send_email(submission, url_base, 'cubecomplete', subject)
+    round_submissions = (
+        submission.cube
+        .submissions
+        .filter(round_number=submission.round_number)
+        .select_related("player")
+    )
+    return _send_email(submission, url_base, 'cubecomplete', subject, {'round_submissions': round_submissions})
 
 
 def _send_email(submission: Submission, url_base: str, template: str, subject: str, context: dict = {}):

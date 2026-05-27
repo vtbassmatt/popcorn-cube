@@ -1,12 +1,14 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .forms import SubmissionForm
 from .models import Cube, Submission
+from .tasks import _send_cubecomplete_emails, _send_newround_emails
 
 User = get_user_model()
 
@@ -344,3 +346,76 @@ class HowItWorksPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("how-this-works"))
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", EMAIL_FROM="test@example.com")
+class RoundCloseEmailTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass", email="owner@example.com")
+        self.other = User.objects.create_user(username="other", password="pass", email="other@example.com")
+        self.cube = Cube.objects.create(name="Test Cube", owner=self.owner, max_cards=4)
+        self.cube.participants.add(self.owner, self.other)
+
+    def _make_submissions(self, owner_reason="", other_reason=""):
+        sub1 = Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Lightning Bolt",
+            related_to=owner_reason,
+        )
+        sub2 = Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Counterspell",
+            related_to=other_reason,
+        )
+        return sub1, sub2
+
+    def test_newround_email_includes_reasons(self):
+        sub1, sub2 = self._make_submissions(
+            owner_reason="", other_reason="Pairs with Lightning Bolt"
+        )
+        _send_newround_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        text_body = mail.outbox[0].body
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertIn("Pairs with Lightning Bolt", text_body)
+        self.assertIn("Pairs with Lightning Bolt", html_body)
+
+    def test_newround_email_omits_empty_reasons(self):
+        sub1, sub2 = self._make_submissions(owner_reason="", other_reason="")
+        _send_newround_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        text_body = mail.outbox[0].body
+        # No stray parentheses for empty reasons
+        self.assertNotIn("()", text_body)
+
+    def test_cubecomplete_email_includes_reasons(self):
+        sub1, sub2 = self._make_submissions(
+            owner_reason="Goes wide", other_reason="Answers threats"
+        )
+        _send_cubecomplete_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        text_body = mail.outbox[0].body
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertIn("Goes wide", text_body)
+        self.assertIn("Answers threats", text_body)
+        self.assertIn("Goes wide", html_body)
+        self.assertIn("Answers threats", html_body)
+
+    def test_cubecomplete_email_lists_cards(self):
+        sub1, sub2 = self._make_submissions(owner_reason="", other_reason="")
+        _send_cubecomplete_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        text_body = mail.outbox[0].body
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertIn("Lightning Bolt", text_body)
+        self.assertIn("Counterspell", text_body)
+        self.assertIn("Lightning Bolt", html_body)
+        self.assertIn("Counterspell", html_body)
