@@ -170,7 +170,7 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "Any")
         self.assertNotContains(response, "scryfall.com/search?q=f%3A")
 
-
+    def test_previous_round_cards_include_scryfall_links(self):
         Submission.objects.create(
             cube=self.cube,
             player=self.owner,
