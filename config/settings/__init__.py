@@ -15,7 +15,6 @@ COMMIT_HASH = config('COMMIT_HASH', default='dev')
 DEPLOY_REF = config('DEPLOY_REF', default='---')
 REPO_URL = config('REPO_URL', default='https://github.com/vtbassmatt/popcorn-cube')
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
-EMAIL_FROM = config("EMAIL_FROM", default="no-one@example.org")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -80,7 +79,15 @@ STORAGES = {
 }
 
 TASKS = {"default": {"BACKEND": "django_ez_tasks.backends.ThreadedBackend"}}
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_BACKEND = config('EMAIL_BACKEND', default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=0, cast=int)
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
+EMAIL_FROM = config("EMAIL_FROM", default="no-one@example.org")
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
