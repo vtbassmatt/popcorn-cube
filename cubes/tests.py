@@ -322,6 +322,54 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "<summary>Subtypes</summary>")
         self.assertContains(response, "beginAtZero: true")
 
+    def test_cube_stats_ignore_incomplete_current_round(self):
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=1,
+            card_name="Savannah Lions",
+            card_snapshot={
+                "name": "Savannah Lions",
+                "type_line": "Creature — Cat",
+                "colors": ["W"],
+                "mana_cost": "{W}",
+                "cmc": 1,
+            },
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.other,
+            round_number=1,
+            card_name="Lightning Bolt",
+            card_snapshot={
+                "name": "Lightning Bolt",
+                "type_line": "Instant",
+                "colors": ["R"],
+                "mana_cost": "{R}",
+                "cmc": 1,
+            },
+        )
+        Submission.objects.create(
+            cube=self.cube,
+            player=self.owner,
+            round_number=2,
+            card_name="Raffine's Informant",
+            card_snapshot={
+                "name": "Raffine's Informant",
+                "type_line": "Creature — Human Wizard",
+                "colors": ["W"],
+                "mana_cost": "{1}{W}",
+                "cmc": 2,
+            },
+        )
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
+
+        self.assertTrue(response.context["has_stats"])
+        self.assertEqual(response.context["cube_stats"]["card_count"], 2)
+        self.assertEqual(response.context["cube_stats"]["cards"]["type_counts"], {"Creature": 1, "Instant": 1})
+
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
         self.cube.participants.add(third)

@@ -99,8 +99,13 @@ class CubeDetailView(LoginRequiredMixin, DetailView):
         complete_submissions = list(
             cube.submissions.select_related("player").order_by("round_number", "player__username", "created_at")
         )
+        stats_submissions = complete_submissions
+        if cube.is_open:
+            stats_submissions = [
+                submission for submission in complete_submissions if submission.round_number < current_round
+            ]
         has_stats = current_round >= FIRST_ROUND_WITH_STATS_DISPLAY
-        cube_stats = compute_cube_stats(complete_submissions) if has_stats else None
+        cube_stats = compute_cube_stats(stats_submissions) if has_stats else None
         round_rows = []
         alphabetical_submissions = []
         if not cube.is_open:
