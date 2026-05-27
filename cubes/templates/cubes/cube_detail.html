@@ -123,6 +123,18 @@
 
       const stats = JSON.parse(statsElement.textContent);
       const colorOrder = ["W", "U", "B", "R", "G"];
+      const chartColorW = "rgba(246, 245, 219, 0.8)";
+      const chartColorU = "rgba(13, 110, 253, 0.8)";
+      const chartColorB = "rgba(97, 13, 253, 0.8)";
+      const chartColorR = "rgba(253, 13, 33, 0.8)";
+      const chartColorG = "rgba(85, 253, 13, 0.8)";
+
+      const chartFillW = "rgba(246, 245, 219, 0.2)";
+      const chartFillU = "rgba(13, 110, 253, 0.2)";
+      const chartFillB = "rgba(97, 13, 253, 0.2)";
+      const chartFillR = "rgba(253, 13, 33, 0.2)";
+      const chartFillG = "rgba(85, 253, 13, 0.2)";
+
       const chartColor = "rgba(13, 110, 253, 0.8)";
       const chartFill = "rgba(13, 110, 253, 0.2)";
 
@@ -170,7 +182,21 @@
               datasets: [{
                 label: "Mana pips",
                 data: pipData,
-                backgroundColor: chartColor,
+                backgroundColor: [
+                  chartFillW,
+                  chartFillU,
+                  chartFillB,
+                  chartFillR,
+                  chartFillG
+                ],
+                borderColor: [
+                  chartColorW,
+                  chartColorU,
+                  chartColorB,
+                  chartColorR,
+                  chartColorG
+                ],
+                borderWidth: 3
               }],
             },
             options: {
