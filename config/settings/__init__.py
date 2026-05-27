@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "django.forms",
+    "django_ez_tasks",
     "runserveronhostname",
     "cubes",
 ]
@@ -78,7 +79,7 @@ STORAGES = {
     },
 }
 
-TASKS = {"default": {"BACKEND": "django.tasks.backends.immediate.ImmediateBackend"}}
+TASKS = {"default": {"BACKEND": "django_ez_tasks.backends.ThreadedBackend"}}
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 AUTH_PASSWORD_VALIDATORS = [
