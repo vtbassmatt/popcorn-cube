@@ -298,7 +298,7 @@ class CubeDetailViewTests(TestCase):
             card_name="Fire // Ice",
             card_snapshot={
                 "name": "Fire // Ice",
-                "type_line": "Instant",
+                "type_line": "Instant // Sorcery — Fuse",
                 "colors": ["U", "R"],
                 "mana_cost": "{1}{U}{R}",
                 "cmc": 2,
@@ -319,6 +319,9 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, "cdn.jsdelivr.net/npm/chart.js")
         self.assertContains(response, "cards-inclusive-chart")
         self.assertContains(response, "faces-pip-chart")
+        self.assertContains(response, "<summary>Subtypes</summary>", html=False)
+        self.assertContains(response, "beginAtZero: true")
+        self.assertContains(response, "min: 0")
 
     def test_detail_page_shows_who_you_are_waiting_on_after_submitting(self):
         third = User.objects.create_user(username="third", password="pass")
@@ -433,7 +436,7 @@ class CubeStatsTests(TestCase):
             card_name="Fire // Ice",
             card_snapshot={
                 "name": "Fire // Ice",
-                "type_line": "Instant",
+                "type_line": "Instant // Sorcery — Fuse",
                 "colors": ["U", "R"],
                 "mana_cost": "{1}{U}{R}",
                 "cmc": 2,
@@ -450,8 +453,13 @@ class CubeStatsTests(TestCase):
         self.assertEqual(stats["face_count"], 3)
         self.assertEqual(stats["cards"]["type_counts"]["Artifact"], 1)
         self.assertEqual(stats["cards"]["type_counts"]["Creature"], 1)
+        self.assertEqual(stats["cards"]["type_counts"]["Instant"], 1)
+        self.assertEqual(stats["cards"]["type_counts"]["Sorcery"], 1)
         self.assertEqual(stats["cards"]["subtype_counts"]["Human"], 1)
         self.assertEqual(stats["cards"]["subtype_counts"]["Warrior"], 1)
+        self.assertEqual(stats["cards"]["subtype_counts"]["Fuse"], 1)
+        self.assertNotIn("//", stats["cards"]["subtype_counts"])
+        self.assertNotIn("—", stats["cards"]["subtype_counts"])
         self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["Colorless"], 1)
         self.assertEqual(stats["cards"]["color_breakdown"]["strict"]["UR"], 1)
         self.assertNotIn("W", stats["cards"]["color_breakdown"]["inclusive"])

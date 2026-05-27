@@ -55,10 +55,12 @@
                 </ul>
               </div>
               <div class="col-md-6">
-                <strong>Subtypes</strong>
-                <ul class="mb-0">
-                  {% for key, value in scope_stats.subtype_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                </ul>
+                <details>
+                  <summary>Subtypes</summary>
+                  <ul class="mb-0 mt-1">
+                    {% for key, value in scope_stats.subtype_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                  </ul>
+                </details>
               </div>
               <div class="col-12">
                 <details>
@@ -147,6 +149,12 @@
             },
             options: {
               responsive: true,
+              scales: {
+                r: {
+                  beginAtZero: true,
+                  min: 0,
+                },
+              },
               plugins: {
                 legend: { display: false },
               },
