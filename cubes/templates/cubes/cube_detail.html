@@ -10,6 +10,129 @@
   <div class="col-md-4"><div class="card card-body"><strong>Max copies per card</strong><span>{% if cube.max_count_per_card == 0 %}Unlimited{% else %}{{ cube.max_count_per_card }}{% endif %}</span></div></div>
 </div>
 
+{% if current_round > 1 and cube.is_open %}
+  <h2 class="h5">Previous round cards</h2>
+  {% if previous_round_cards %}
+    <ul class="list-group mb-4">
+      {% for submission in previous_round_cards %}
+        <li class="list-group-item d-flex justify-content-between">
+          <div>
+            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+            {% if submission.related_to %}
+              <div><small class="text-muted">{{ submission.related_to }}</small></div>
+            {% endif %}
+          </div>
+          <small class="text-muted">{% if submission.player == request.user %}<span class="badge text-bg-secondary">you</span>{% else %}{{ submission.player.username }}{% endif %}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No cards in the previous round yet.</p>
+  {% endif %}
+{% endif %}
+
+{% if cube.is_open %}
+  <div class="mb-3">
+    {% if show_prior_submissions %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}">Hide prior submissions</a>
+    {% else %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}?show_prior_submissions=1">Show my prior submissions</a>
+    {% endif %}
+  </div>
+
+  {% if show_prior_submissions %}
+    <h2 class="h5">My prior submissions</h2>
+    {% if prior_submissions %}
+      <ul class="list-group mb-4">
+        {% for submission in prior_submissions %}
+          <li class="list-group-item d-flex justify-content-between">
+            <div>
+              <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+              {% if submission.related_to %}
+                <div><small class="text-muted">{{ submission.related_to }}</small></div>
+              {% endif %}
+            </div>
+            <small class="text-muted">Round {{ submission.round_number }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">You do not have any prior submissions yet.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if can_submit %}
+    <form method="post" class="card card-body mb-3">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div>
+        <button class="btn btn-success" type="submit">Submit card for round {{ current_round }}</button>
+      </div>
+    </form>
+  {% elif already_submitted %}
+    <div class="alert alert-info mb-3">
+      You already submitted <a href="{{ submitted_card.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submitted_card.card_name }}</a> this round.
+      {% if waiting_on_participants %}
+        Waiting on: {% for participant in waiting_on_participants %}{% if not forloop.first %}, {% endif %}{{ participant.username }}{% endfor %}.
+      {% endif %}
+    </div>
+  {% endif %}
+{% else %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Cube is complete!</h2>
+    <div class="btn-group" role="group" aria-label="Completed cube display mode">
+      <a class="btn btn-sm {% if display_mode == 'table' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=table">Round table</a>
+      <a class="btn btn-sm {% if display_mode == 'alphabetical' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=alphabetical">Alphabetical</a>
+    </div>
+  </div>
+
+  {% if display_mode == "alphabetical" %}
+    <ul class="list-group mb-4">
+      {% for submission in alphabetical_submissions %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div>
+            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+            {% if submission.related_to %}
+              <div><small class="text-muted">{{ submission.related_to }}</small></div>
+            {% endif %}
+          </div>
+          <small class="text-muted">{{ submission.player.username }} · Round {{ submission.round_number }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="table-responsive mb-4">
+      <table class="table table-sm table-bordered align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th scope="col">Round</th>
+            {% for participant in results_participants %}
+              <th scope="col">{{ participant.username }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in round_rows %}
+            <tr>
+              <th scope="row">Round {{ row.round_number }}</th>
+              {% for submission in row.cards %}
+                <td>
+                  {% if submission %}
+                    <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
+                    {% if submission.related_to %}
+                      <div><small class="text-muted">{{ submission.related_to }}</small></div>
+                    {% endif %}
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endif %}
+
 {% if has_stats and cube_stats %}
   <h2 class="h5">Cube stats</h2>
   <p class="text-muted mb-3">Cards: {{ cube_stats.card_count }} · Faces: {{ cube_stats.face_count }}</p>
@@ -214,127 +337,5 @@
   </script>
 {% endif %}
 
-{% if current_round > 1 and cube.is_open %}
-  <h2 class="h5">Previous round cards</h2>
-  {% if previous_round_cards %}
-    <ul class="list-group mb-4">
-      {% for submission in previous_round_cards %}
-        <li class="list-group-item d-flex justify-content-between">
-          <div>
-            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
-            {% if submission.related_to %}
-              <div><small class="text-muted">{{ submission.related_to }}</small></div>
-            {% endif %}
-          </div>
-          <small class="text-muted">{% if submission.player == request.user %}<span class="badge text-bg-secondary">you</span>{% else %}{{ submission.player.username }}{% endif %}</small>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-muted">No cards in the previous round yet.</p>
-  {% endif %}
-{% endif %}
 
-{% if cube.is_open %}
-  <div class="mb-3">
-    {% if show_prior_submissions %}
-      <a class="btn btn-sm btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}">Hide prior submissions</a>
-    {% else %}
-      <a class="btn btn-sm btn-outline-secondary" href="{% url 'cube-detail' cube.pk %}?show_prior_submissions=1">Show my prior submissions</a>
-    {% endif %}
-  </div>
-
-  {% if show_prior_submissions %}
-    <h2 class="h5">My prior submissions</h2>
-    {% if prior_submissions %}
-      <ul class="list-group mb-4">
-        {% for submission in prior_submissions %}
-          <li class="list-group-item d-flex justify-content-between">
-            <div>
-              <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
-              {% if submission.related_to %}
-                <div><small class="text-muted">{{ submission.related_to }}</small></div>
-              {% endif %}
-            </div>
-            <small class="text-muted">Round {{ submission.round_number }}</small>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="text-muted">You do not have any prior submissions yet.</p>
-    {% endif %}
-  {% endif %}
-
-  {% if can_submit %}
-    <form method="post" class="card card-body">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <div>
-        <button class="btn btn-success" type="submit">Submit card for round {{ current_round }}</button>
-      </div>
-    </form>
-    {% include "cubes/_card_autocomplete.html" %}
-  {% elif already_submitted %}
-    <div class="alert alert-info">
-      You already submitted <a href="{{ submitted_card.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submitted_card.card_name }}</a> this round.
-      {% if waiting_on_participants %}
-        Waiting on: {% for participant in waiting_on_participants %}{% if not forloop.first %}, {% endif %}{{ participant.username }}{% endfor %}.
-      {% endif %}
-    </div>
-  {% endif %}
-{% else %}
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h5 mb-0">Cube is complete!</h2>
-    <div class="btn-group" role="group" aria-label="Completed cube display mode">
-      <a class="btn btn-sm {% if display_mode == 'table' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=table">Round table</a>
-      <a class="btn btn-sm {% if display_mode == 'alphabetical' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=alphabetical">Alphabetical</a>
-    </div>
-  </div>
-
-  {% if display_mode == "alphabetical" %}
-    <ul class="list-group mb-4">
-      {% for submission in alphabetical_submissions %}
-        <li class="list-group-item d-flex justify-content-between align-items-start">
-          <div>
-            <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
-            {% if submission.related_to %}
-              <div><small class="text-muted">{{ submission.related_to }}</small></div>
-            {% endif %}
-          </div>
-          <small class="text-muted">{{ submission.player.username }} · Round {{ submission.round_number }}</small>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <div class="table-responsive mb-4">
-      <table class="table table-sm table-bordered align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th scope="col">Round</th>
-            {% for participant in results_participants %}
-              <th scope="col">{{ participant.username }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in round_rows %}
-            <tr>
-              <th scope="row">Round {{ row.round_number }}</th>
-              {% for submission in row.cards %}
-                <td>
-                  {% if submission %}
-                    <a href="{{ submission.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submission.card_name }}</a>
-                    {% if submission.related_to %}
-                      <div><small class="text-muted">{{ submission.related_to }}</small></div>
-                    {% endif %}
-                  {% endif %}
-                </td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
-{% endif %}
 {% endblock %}
