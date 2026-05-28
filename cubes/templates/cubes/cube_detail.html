@@ -267,10 +267,63 @@
     <form method="post" class="card card-body">
       {% csrf_token %}
       {{ form.as_p }}
+      <datalist id="card-name-suggestions"></datalist>
       <div>
         <button class="btn btn-success" type="submit">Submit card for round {{ current_round }}</button>
       </div>
     </form>
+    <script>
+      (function () {
+        const input = document.querySelector('input[data-card-autocomplete="1"]');
+        const datalist = document.getElementById("card-name-suggestions");
+        if (!input || !datalist) return;
+
+        const autocompleteUrl = "{% url 'cube-card-autocomplete' cube.pk %}";
+        let timeoutId = null;
+        let pendingController = null;
+
+        const updateSuggestions = function (cardNames) {
+          datalist.innerHTML = "";
+          for (const cardName of cardNames) {
+            const option = document.createElement("option");
+            option.value = cardName;
+            datalist.appendChild(option);
+          }
+        };
+
+        input.addEventListener("input", function () {
+          const query = input.value.trim();
+          if (query.length < 2) {
+            updateSuggestions([]);
+            if (pendingController) {
+              pendingController.abort();
+              pendingController = null;
+            }
+            return;
+          }
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(async function () {
+            if (pendingController) pendingController.abort();
+            pendingController = new AbortController();
+            try {
+              const response = await fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`, {
+                headers: { Accept: "application/json" },
+                signal: pendingController.signal,
+              });
+              if (!response.ok) {
+                updateSuggestions([]);
+                return;
+              }
+              const payload = await response.json();
+              updateSuggestions(Array.isArray(payload.cards) ? payload.cards : []);
+            } catch (error) {
+              if (error && error.name === "AbortError") return;
+              updateSuggestions([]);
+            }
+          }, 150);
+        });
+      })();
+    </script>
   {% elif already_submitted %}
     <div class="alert alert-info">
       You already submitted <a href="{{ submitted_card.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submitted_card.card_name }}</a> this round.

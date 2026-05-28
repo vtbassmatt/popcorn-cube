@@ -44,6 +44,12 @@ class SubmissionForm(Bs5ModelFormBase):
         self.cube = cube
         self.player = player
         self.card_data = None
+        self.fields["card_name"].widget.attrs.update(
+            {
+                "list": "card-name-suggestions",
+                "data-card-autocomplete": "1",
+            }
+        )
         self.fields["related_to"].required = False
         self.fields["related_to"].label = "Reason (optional)"
         self.fields["related_to"].help_text = "How does this card connect to one or more cards from last round?"
