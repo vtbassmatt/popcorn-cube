@@ -30,7 +30,7 @@ def _send_midround_emails(submission: Submission, url_base: str):
     if not settings.EMAIL_SEND_MIDROUND:
         return 'disabled'
 
-    subject = f"[Popcorn Cube] {submission.player.get_short_name() or submission.player.get_username()} submitted a card for round {submission.round_number} in {submission.cube.name}"
+    subject = f"[Popcorn Cube] {submission.cube.name}"
     current_round_submitted_player_ids = set(
         submission.cube.submissions.filter(round_number=submission.round_number).values_list("player_id", flat=True)
     )
@@ -44,7 +44,7 @@ def _send_midround_emails(submission: Submission, url_base: str):
 
 
 def _send_newround_emails(submission: Submission, url_base: str):
-    subject = f"[Popcorn Cube] Round {submission.cube.current_round} for {submission.cube.name} starts now"
+    subject = f"[Popcorn Cube] {submission.cube.name}"
     round_submissions = (
         submission.cube
         .submissions

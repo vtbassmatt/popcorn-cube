@@ -11,7 +11,7 @@ from django.urls import reverse
 from .forms import SubmissionForm
 from .models import Cube, Submission
 from .stats import compute_cube_stats
-from .tasks import _send_cubecomplete_emails, _send_newround_emails
+from .tasks import _send_cubecomplete_emails, _send_midround_emails, _send_newround_emails
 
 User = get_user_model()
 
@@ -727,6 +727,34 @@ class RoundCloseEmailTests(TestCase):
         self.assertIn("Counterspell", text_body)
         self.assertIn("Lightning Bolt", html_body)
         self.assertIn("Counterspell", html_body)
+
+    def test_newround_email_subject_uses_cube_name_only(self):
+        sub1, sub2 = self._make_submissions()
+        _send_newround_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        subject = mail.outbox[0].subject
+        self.assertIn("Test Cube", subject)
+        self.assertNotIn("round", subject.lower())
+
+    def test_cubecomplete_email_subject_uses_cube_name(self):
+        sub1, sub2 = self._make_submissions()
+        _send_cubecomplete_emails(sub2, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        subject = mail.outbox[0].subject
+        self.assertIn("Test Cube", subject)
+        self.assertNotIn("round", subject.lower())
+
+    def test_midround_email_subject_uses_cube_name_only(self):
+        sub1, sub2 = self._make_submissions()
+        with self.settings(EMAIL_SEND_MIDROUND=True):
+            _send_midround_emails(sub1, "http://example.com")
+
+        self.assertEqual(len(mail.outbox), 1)
+        subject = mail.outbox[0].subject
+        self.assertIn("Test Cube", subject)
+        self.assertNotIn("round", subject.lower())
 
 
 
