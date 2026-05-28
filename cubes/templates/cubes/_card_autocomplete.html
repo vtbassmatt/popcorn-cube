@@ -40,6 +40,15 @@
         }
         return;
       }
+      if (datalist.querySelector(`option[value="${CSS.escape(query)}"]`)) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (pendingController) {
+          pendingController.abort();
+          pendingController = null;
+        }
+        setLoading(false);
+        return;
+      }
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(async function () {
         if (pendingController) pendingController.abort();
