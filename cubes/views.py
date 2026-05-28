@@ -1,4 +1,5 @@
 import csv
+import re
 from functools import partial
 
 from django.contrib import messages
@@ -245,7 +246,10 @@ def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
 
     filename = f"{cube.name}.csv"
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    # Sanitize filename: remove path separators, quotes, and control characters
+    # that could be problematic in Content-Disposition headers or file systems.
+    safe_filename = re.sub(r'["\\/\r\n\t]', '_', filename)
+    response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
 
     writer = csv.writer(response)
     writer.writerow(["quantity", "card name"])
