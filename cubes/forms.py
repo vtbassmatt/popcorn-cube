@@ -37,19 +37,18 @@ class SubmissionForm(Bs5ModelFormBase):
     class Meta:
         model = Submission
         fields = ["card_name", "related_to"]
-        widgets = {"related_to": forms.TextInput()}
+        widgets = {"related_to": forms.TextInput(attrs={"autocomplete":"off"})}
 
     def __init__(self, *args, cube: Cube, player, **kwargs):
         super().__init__(*args, **kwargs)
         self.cube = cube
         self.player = player
         self.card_data = None
-        self.fields["card_name"].widget.attrs.update(
-            {
-                "list": "card-name-suggestions",
-                "data-card-autocomplete": "1",
-            }
-        )
+        self.fields["card_name"].widget.attrs.update({
+            "list": "card-name-suggestions",
+            "data-card-autocomplete": "1",
+            "autocomplete": "off",
+        })
         self.fields["related_to"].required = False
         self.fields["related_to"].label = "Reason (optional)"
         self.fields["related_to"].help_text = "How does this card connect to one or more cards from last round?"
