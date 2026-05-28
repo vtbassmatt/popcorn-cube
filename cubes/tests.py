@@ -233,7 +233,7 @@ class CubeDetailViewTests(TestCase):
 
         response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
 
-        self.assertContains(response, "legal:modern")
+        self.assertContains(response, 'formatLegality = "modern"')
 
     def test_open_cube_hides_prior_submissions_by_default(self):
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
