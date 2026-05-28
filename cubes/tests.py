@@ -222,40 +222,18 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, 'id="card-name-autocomplete-spinner"')
         self.assertContains(response, "spinner-border-sm")
         self.assertContains(response, "text-primary")
-        self.assertContains(response, reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}))
+        self.assertContains(response, "api.scryfall.com/cards/autocomplete")
         self.assertIn("form", response.context)
         self.assertFalse(response.context["form"].is_bound)
 
-    @patch("cubes.views.fetch_card_name_suggestions")
-    def test_card_autocomplete_returns_format_filtered_names(self, mock_fetch):
+    def test_detail_page_autocomplete_includes_format_legality(self):
         self.cube.format_legality = "modern"
         self.cube.save()
-        mock_fetch.return_value = ["Lightning Bolt", "Lightning Helix"]
         self.client.login(username="owner", password="pass")
 
-        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "light"})
+        response = self.client.get(reverse("cube-detail", kwargs={"pk": self.cube.pk}))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"cards": ["Lightning Bolt", "Lightning Helix"]})
-        mock_fetch.assert_called_once_with("light", "modern")
-
-    @patch("cubes.views.fetch_card_name_suggestions")
-    def test_card_autocomplete_skips_scryfall_lookup_for_short_queries(self, mock_fetch):
-        self.client.login(username="owner", password="pass")
-
-        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "a"})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"cards": []})
-        mock_fetch.assert_not_called()
-
-    def test_card_autocomplete_returns_404_for_non_participants(self):
-        outsider = User.objects.create_user(username="outsider", password="pass")
-        self.client.login(username="outsider", password="pass")
-
-        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "light"})
-
-        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'formatLegality = "modern"')
 
     def test_open_cube_hides_prior_submissions_by_default(self):
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")

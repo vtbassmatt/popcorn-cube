@@ -11,7 +11,8 @@
 
     input.insertAdjacentElement("afterend", spinner);
 
-    const autocompleteUrl = "{% url 'cube-card-autocomplete' cube.pk %}";
+    const scryfallAutocompleteUrl = "https://api.scryfall.com/cards/autocomplete";
+    const formatLegality = "{{ cube.format_legality }}";
     let timeoutId = null;
     let pendingController = null;
 
@@ -39,6 +40,15 @@
         }
         return;
       }
+      if (datalist.querySelector(`option[value="${CSS.escape(query)}"]`)) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (pendingController) {
+          pendingController.abort();
+          pendingController = null;
+        }
+        setLoading(false);
+        return;
+      }
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(async function () {
         if (pendingController) pendingController.abort();
@@ -46,7 +56,8 @@
         pendingController = controller;
         setLoading(true);
         try {
-          const response = await fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`, {
+          const params = new URLSearchParams({ q: query, include_extras: "false" });
+          const response = await fetch(`${scryfallAutocompleteUrl}?${params}`, {
             headers: { Accept: "application/json" },
             signal: controller.signal,
           });
@@ -55,7 +66,7 @@
             return;
           }
           const payload = await response.json();
-          updateSuggestions(Array.isArray(payload.cards) ? payload.cards : []);
+          updateSuggestions(Array.isArray(payload.data) ? payload.data : []);
         } catch (error) {
           if (error && error.name === "AbortError") return;
           updateSuggestions([]);
