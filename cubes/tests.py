@@ -246,6 +246,14 @@ class CubeDetailViewTests(TestCase):
         self.assertEqual(response.json(), {"cards": []})
         mock_fetch.assert_not_called()
 
+    def test_card_autocomplete_returns_404_for_non_participants(self):
+        outsider = User.objects.create_user(username="outsider", password="pass")
+        self.client.login(username="outsider", password="pass")
+
+        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "light"})
+
+        self.assertEqual(response.status_code, 404)
+
     def test_open_cube_hides_prior_submissions_by_default(self):
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")
         Submission.objects.create(cube=self.cube, player=self.other, round_number=1, card_name="Bolt")

@@ -217,9 +217,7 @@ def submit_card(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 def card_autocomplete(request: HttpRequest, pk: int) -> HttpResponse:
-    cube = get_object_or_404(Cube.objects.prefetch_related("participants"), pk=pk)
-    if not cube.participants.filter(pk=request.user.pk).exists():
-        return JsonResponse({"cards": []}, status=403)
+    cube = get_object_or_404(Cube.objects.filter(participants=request.user).distinct(), pk=pk)
 
     query = request.GET.get("q", "").strip()
     if len(query) < 2:

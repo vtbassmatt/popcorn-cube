@@ -7,6 +7,8 @@ from urllib.request import Request, urlopen
 SCRYFALL_NAMED_URL = "https://api.scryfall.com/cards/named"
 SCRYFALL_CARD_URL = "https://api.scryfall.com/cards"
 SCRYFALL_CARD_SEARCH_URL = f"{SCRYFALL_CARD_URL}/search"
+SCRYFALL_SUPPORTED_FORMATS = {"standard", "pioneer", "modern", "legacy", "vintage", "commander", "pauper"}
+SCRYFALL_AUTOCOMPLETE_LIMIT = 20
 
 
 def fetch_card_by_name(card_name: str) -> dict[str, Any] | None:
@@ -30,13 +32,13 @@ def fetch_card_by_id(scryfall_id: str) -> dict[str, Any] | None:
         return None
 
 
-def fetch_card_name_suggestions(query: str, mtg_format: str = "", limit: int = 20) -> list[str]:
+def fetch_card_name_suggestions(query: str, mtg_format: str = "") -> list[str]:
     card_query = query.strip()
     if len(card_query) < 2:
         return []
 
     search_terms = [card_query, "in:paper"]
-    if mtg_format:
+    if mtg_format in SCRYFALL_SUPPORTED_FORMATS:
         search_terms.append(f"legal:{mtg_format}")
     search_query = urlencode({"q": " ".join(search_terms), "order": "name", "unique": "cards"})
     request = Request(f"{SCRYFALL_CARD_SEARCH_URL}?{search_query}", headers={"User-Agent": "popcorn-cube/0.1"})
@@ -55,7 +57,7 @@ def fetch_card_name_suggestions(query: str, mtg_format: str = "", limit: int = 2
             continue
         names.append(name)
         seen_names.add(name)
-        if len(names) >= limit:
+        if len(names) >= SCRYFALL_AUTOCOMPLETE_LIMIT:
             break
 
     return names
