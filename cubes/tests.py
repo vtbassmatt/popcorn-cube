@@ -149,6 +149,12 @@ class SubmissionFormDisplayTests(TestCase):
         self.assertEqual(form.fields["related_to"].label, "Reason (optional)")
         self.assertEqual(form.fields["related_to"].widget.__class__.__name__, "TextInput")
 
+    def test_card_name_input_has_autocomplete_attributes(self):
+        form = SubmissionForm(cube=self.cube, player=self.owner)
+
+        self.assertEqual(form.fields["card_name"].widget.attrs["list"], "card-name-suggestions")
+        self.assertEqual(form.fields["card_name"].widget.attrs["data-card-autocomplete"], "1")
+
 
 class CubeDetailViewTests(TestCase):
     def setUp(self):
@@ -212,8 +218,44 @@ class CubeDetailViewTests(TestCase):
         self.assertContains(response, 'Submit card for round 1')
         self.assertContains(response, 'name="card_name"')
         self.assertContains(response, 'name="related_to"')
+        self.assertContains(response, 'id="card-name-suggestions"')
+        self.assertContains(response, 'id="card-name-autocomplete-spinner"')
+        self.assertContains(response, "spinner-border-sm")
+        self.assertContains(response, "text-primary")
+        self.assertContains(response, reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}))
         self.assertIn("form", response.context)
         self.assertFalse(response.context["form"].is_bound)
+
+    @patch("cubes.views.fetch_card_name_suggestions")
+    def test_card_autocomplete_returns_format_filtered_names(self, mock_fetch):
+        self.cube.format_legality = "modern"
+        self.cube.save()
+        mock_fetch.return_value = ["Lightning Bolt", "Lightning Helix"]
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "light"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"cards": ["Lightning Bolt", "Lightning Helix"]})
+        mock_fetch.assert_called_once_with("light", "modern")
+
+    @patch("cubes.views.fetch_card_name_suggestions")
+    def test_card_autocomplete_skips_scryfall_lookup_for_short_queries(self, mock_fetch):
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "a"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"cards": []})
+        mock_fetch.assert_not_called()
+
+    def test_card_autocomplete_returns_404_for_non_participants(self):
+        outsider = User.objects.create_user(username="outsider", password="pass")
+        self.client.login(username="outsider", password="pass")
+
+        response = self.client.get(reverse("cube-card-autocomplete", kwargs={"pk": self.cube.pk}), {"q": "light"})
+
+        self.assertEqual(response.status_code, 404)
 
     def test_open_cube_hides_prior_submissions_by_default(self):
         Submission.objects.create(cube=self.cube, player=self.owner, round_number=1, card_name="Opt")

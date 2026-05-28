@@ -6,6 +6,9 @@ from urllib.request import Request, urlopen
 
 SCRYFALL_NAMED_URL = "https://api.scryfall.com/cards/named"
 SCRYFALL_CARD_URL = "https://api.scryfall.com/cards"
+SCRYFALL_CARD_SEARCH_URL = f"{SCRYFALL_CARD_URL}/search"
+SCRYFALL_SUPPORTED_FORMATS = {"standard", "pioneer", "modern", "legacy", "vintage", "commander", "pauper"}
+SCRYFALL_AUTOCOMPLETE_LIMIT = 20
 
 
 def fetch_card_by_name(card_name: str) -> dict[str, Any] | None:
@@ -27,6 +30,37 @@ def fetch_card_by_id(scryfall_id: str) -> dict[str, Any] | None:
             return json.loads(response.read().decode("utf-8"))
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
         return None
+
+
+def fetch_card_name_suggestions(query: str, mtg_format: str = "") -> list[str]:
+    card_query = query.strip()
+    if len(card_query) < 2:
+        return []
+
+    search_terms = [card_query, "in:paper"]
+    if mtg_format in SCRYFALL_SUPPORTED_FORMATS:
+        search_terms.append(f"legal:{mtg_format}")
+    search_query = urlencode({"q": " ".join(search_terms), "order": "name", "unique": "cards"})
+    request = Request(f"{SCRYFALL_CARD_SEARCH_URL}?{search_query}", headers={"User-Agent": "popcorn-cube/0.1"})
+    request.add_header("Accept", "application/json;q=0.9,*/*;q=0.8")
+    try:
+        with urlopen(request, timeout=10) as response:  # noqa: S310
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return []
+
+    names: list[str] = []
+    seen_names: set[str] = set()
+    for card in payload.get("data", []):
+        name = card.get("name")
+        if not isinstance(name, str) or name in seen_names:
+            continue
+        names.append(name)
+        seen_names.add(name)
+        if len(names) >= SCRYFALL_AUTOCOMPLETE_LIMIT:
+            break
+
+    return names
 
 
 def is_card_legal_for_format(card_data: dict[str, Any], mtg_format: str) -> bool:

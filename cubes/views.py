@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
@@ -12,6 +12,7 @@ from django.views.generic.base import TemplateView
 
 from .forms import CubeForm, SubmissionForm
 from .models import Cube, Submission
+from .scryfall import fetch_card_name_suggestions
 from .stats import compute_cube_stats
 from .tasks import email_about_submission
 
@@ -212,3 +213,15 @@ def submit_card(request: HttpRequest, pk: int) -> HttpResponse:
         form = SubmissionForm(cube=cube, player=request.user)
 
     return render(request, "cubes/submission_form.html", {"form": form, "cube": cube})
+
+
+@login_required
+def card_autocomplete(request: HttpRequest, pk: int) -> HttpResponse:
+    cube = get_object_or_404(Cube.objects.filter(participants=request.user).distinct(), pk=pk)
+
+    query = request.GET.get("q", "").strip()
+    if len(query) < 2:
+        return JsonResponse({"cards": []})
+
+    suggestions = fetch_card_name_suggestions(query, cube.format_legality)
+    return JsonResponse({"cards": suggestions})

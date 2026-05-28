@@ -271,6 +271,7 @@
         <button class="btn btn-success" type="submit">Submit card for round {{ current_round }}</button>
       </div>
     </form>
+    {% include "cubes/_card_autocomplete.html" %}
   {% elif already_submitted %}
     <div class="alert alert-info">
       You already submitted <a href="{{ submitted_card.scryfall_url }}" target="_blank" rel="noopener noreferrer">{{ submitted_card.card_name }}</a> this round.
