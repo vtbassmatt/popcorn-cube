@@ -18,92 +18,94 @@
       {% if scope_name == "cards" or scope_name == "faces" %}
         <div class="col-12">
           <div class="card card-body">
-            <h3 class="h6 text-uppercase">{{ scope_name }}</h3>
-            <div class="row g-3">
-              <div class="col-lg-6">
-                <div class="card bg-body-tertiary border-0 h-100">
-                  <div class="card-body">
-                    <h4 class="h6">Color breakdown (inclusive)</h4>
-                    <canvas id="{{ scope_name }}-inclusive-chart" role="img" aria-label="Inclusive color distribution chart for {{ scope_name }}"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-6">
-                <div class="card bg-body-tertiary border-0 h-100">
-                  <div class="card-body">
-                    <h4 class="h6">Mana pips (WUBRG)</h4>
-                    <canvas id="{{ scope_name }}-pip-chart" role="img" aria-label="Mana pip distribution chart for {{ scope_name }}"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <strong>Color breakdown (strict)</strong>
-                <ul class="mb-0">
-                  {% for key, value in scope_stats.color_breakdown.strict.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                </ul>
-              </div>
-              <div class="col-md-6">
-                <strong>Color breakdown (inclusive)</strong>
-                <ul class="mb-0">
-                  {% for key, value in scope_stats.color_breakdown.inclusive.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                </ul>
-              </div>
-              <div class="col-md-6">
-                <strong>Types</strong>
-                <ul class="mb-0">
-                  {% for key, value in scope_stats.type_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                </ul>
-              </div>
-              <div class="col-md-6">
-                <details>
-                  <summary>Subtypes</summary>
-                  <ul class="mb-0 mt-1">
-                    {% for key, value in scope_stats.subtype_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                  </ul>
-                </details>
-              </div>
-              <div class="col-12">
-                <details>
-                  <summary>Detailed mana and stat distributions</summary>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-6">
-                      <strong>Mana pips</strong>
-                      <ul class="mb-0">
-                        {% for key, value in scope_stats.mana_pips.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                      </ul>
+            <details>
+              <summary class="h6 text-capitalize">{{ scope_name }}</summary>
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <div class="card bg-body-tertiary border-0 h-100">
+                    <div class="card-body">
+                      <h4 class="h6">Color breakdown (inclusive)</h4>
+                      <canvas id="{{ scope_name }}-inclusive-chart" role="img" aria-label="Inclusive color distribution chart for {{ scope_name }}"></canvas>
                     </div>
-                    {% for metric_name, metric_data in scope_stats.items %}
-                      {% if metric_name == "mana_value" or metric_name == "power" or metric_name == "toughness" %}
-                        <div class="col-12">
-                          <strong>{{ metric_name|title }}</strong>
-                          <p class="mb-1">Count: {{ metric_data.overall.count }} · Mean: {{ metric_data.overall.mean|floatformat:2 }} · Std dev: {{ metric_data.overall.std_dev|floatformat:2 }}</p>
-                          <div class="row g-2">
-                            <div class="col-md-4">
-                              <small class="text-muted">By value</small>
-                              <ul class="mb-0">
-                                {% for key, value in metric_data.overall.count_by_value.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
-                              </ul>
-                            </div>
-                            <div class="col-md-4">
-                              <small class="text-muted">By color</small>
-                              <ul class="mb-0">
-                                {% for key, value in metric_data.by_color.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
-                              </ul>
-                            </div>
-                            <div class="col-md-4">
-                              <small class="text-muted">By color combination</small>
-                              <ul class="mb-0">
-                                {% for key, value in metric_data.by_color_combination.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
-                              </ul>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="card bg-body-tertiary border-0 h-100">
+                    <div class="card-body">
+                      <h4 class="h6">Mana pips (WUBRG)</h4>
+                      <canvas id="{{ scope_name }}-pip-chart" role="img" aria-label="Mana pip distribution chart for {{ scope_name }}"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <strong>Color breakdown (strict)</strong>
+                  <ul class="mb-0">
+                    {% for key, value in scope_stats.color_breakdown.strict.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <strong>Color breakdown (inclusive)</strong>
+                  <ul class="mb-0">
+                    {% for key, value in scope_stats.color_breakdown.inclusive.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <strong>Types</strong>
+                  <ul class="mb-0">
+                    {% for key, value in scope_stats.type_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <details>
+                    <summary>Subtypes</summary>
+                    <ul class="mb-0 mt-1">
+                      {% for key, value in scope_stats.subtype_counts.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                    </ul>
+                  </details>
+                </div>
+                <div class="col-12">
+                  <details>
+                    <summary>Detailed mana and stat distributions</summary>
+                    <div class="row g-3 mt-2">
+                      <div class="col-md-6">
+                        <strong>Mana pips</strong>
+                        <ul class="mb-0">
+                          {% for key, value in scope_stats.mana_pips.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                        </ul>
+                      </div>
+                      {% for metric_name, metric_data in scope_stats.items %}
+                        {% if metric_name == "mana_value" or metric_name == "power" or metric_name == "toughness" %}
+                          <div class="col-12">
+                            <strong>{{ metric_name|title }}</strong>
+                            <p class="mb-1">Count: {{ metric_data.overall.count }} · Mean: {{ metric_data.overall.mean|floatformat:2 }} · Std dev: {{ metric_data.overall.std_dev|floatformat:2 }}</p>
+                            <div class="row g-2">
+                              <div class="col-md-4">
+                                <small class="text-muted">By value</small>
+                                <ul class="mb-0">
+                                  {% for key, value in metric_data.overall.count_by_value.items %}<li>{{ key }}: {{ value }}</li>{% empty %}<li>None</li>{% endfor %}
+                                </ul>
+                              </div>
+                              <div class="col-md-4">
+                                <small class="text-muted">By color</small>
+                                <ul class="mb-0">
+                                  {% for key, value in metric_data.by_color.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
+                                </ul>
+                              </div>
+                              <div class="col-md-4">
+                                <small class="text-muted">By color combination</small>
+                                <ul class="mb-0">
+                                  {% for key, value in metric_data.by_color_combination.items %}<li>{{ key }}: {{ value.count }}</li>{% empty %}<li>None</li>{% endfor %}
+                                </ul>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      {% endif %}
-                    {% endfor %}
-                  </div>
-                </details>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </details>
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         </div>
       {% endif %}
