@@ -1,13 +1,23 @@
 <datalist id="card-name-suggestions"></datalist>
+<span id="card-name-autocomplete-spinner" class="spinner-border spinner-border-sm text-primary ms-2 d-none" role="status" aria-live="polite">
+  <span class="visually-hidden">Loading card suggestions...</span>
+</span>
 <script>
   (function () {
     const input = document.querySelector('input[data-card-autocomplete="1"]');
     const datalist = document.getElementById("card-name-suggestions");
-    if (!input || !datalist) return;
+    const spinner = document.getElementById("card-name-autocomplete-spinner");
+    if (!input || !datalist || !spinner) return;
+
+    input.insertAdjacentElement("afterend", spinner);
 
     const autocompleteUrl = "{% url 'cube-card-autocomplete' cube.pk %}";
     let timeoutId = null;
     let pendingController = null;
+
+    const setLoading = function (isLoading) {
+      spinner.classList.toggle("d-none", !isLoading);
+    };
 
     const updateSuggestions = function (cardNames) {
       datalist.innerHTML = "";
@@ -22,6 +32,7 @@
       const query = input.value.trim();
       if (query.length < 2) {
         updateSuggestions([]);
+        setLoading(false);
         if (pendingController) {
           pendingController.abort();
           pendingController = null;
@@ -31,11 +42,13 @@
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(async function () {
         if (pendingController) pendingController.abort();
-        pendingController = new AbortController();
+        const controller = new AbortController();
+        pendingController = controller;
+        setLoading(true);
         try {
           const response = await fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`, {
             headers: { Accept: "application/json" },
-            signal: pendingController.signal,
+            signal: controller.signal,
           });
           if (!response.ok) {
             updateSuggestions([]);
@@ -46,6 +59,11 @@
         } catch (error) {
           if (error && error.name === "AbortError") return;
           updateSuggestions([]);
+        } finally {
+          if (pendingController === controller) {
+            pendingController = null;
+            setLoading(false);
+          }
         }
       }, 150);
     });
