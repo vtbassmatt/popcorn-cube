@@ -1,9 +1,11 @@
+import csv
 from functools import partial
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
+from django.db.models import Count
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -225,3 +227,29 @@ def card_autocomplete(request: HttpRequest, pk: int) -> HttpResponse:
 
     suggestions = fetch_card_name_suggestions(query, cube.format_legality)
     return JsonResponse({"cards": suggestions})
+
+
+@login_required
+def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
+    cube = get_object_or_404(Cube.objects.filter(participants=request.user).distinct(), pk=pk)
+
+    if cube.is_open:
+        messages.error(request, "Cube export is only available when the cube is complete.")
+        return redirect("cube-detail", pk=cube.pk)
+
+    card_counts = (
+        cube.submissions.values("card_name")
+        .annotate(quantity=Count("card_name"))
+        .order_by("card_name")
+    )
+
+    filename = f"{cube.name}.csv"
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow(["quantity", "card name"])
+    for entry in card_counts:
+        writer.writerow([entry["quantity"], entry["card_name"]])
+
+    return response

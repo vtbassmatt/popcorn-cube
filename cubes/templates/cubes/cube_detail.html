@@ -81,9 +81,12 @@
 {% else %}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="h5 mb-0">Cube is complete!</h2>
-    <div class="btn-group" role="group" aria-label="Completed cube display mode">
-      <a class="btn btn-sm {% if display_mode == 'table' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=table">Round table</a>
-      <a class="btn btn-sm {% if display_mode == 'alphabetical' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=alphabetical">Alphabetical</a>
+    <div class="d-flex gap-2 align-items-center">
+      <a class="btn btn-sm btn-outline-success" href="{% url 'cube-export' cube.pk %}">Export CSV</a>
+      <div class="btn-group" role="group" aria-label="Completed cube display mode">
+        <a class="btn btn-sm {% if display_mode == 'table' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=table">Round table</a>
+        <a class="btn btn-sm {% if display_mode == 'alphabetical' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'cube-detail' cube.pk %}?view=alphabetical">Alphabetical</a>
+      </div>
     </div>
   </div>
 

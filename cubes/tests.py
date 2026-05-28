@@ -749,3 +749,58 @@ class RoundCloseEmailTests(TestCase):
         self.assertIn("Counterspell", text_body)
         self.assertIn("Lightning Bolt", html_body)
         self.assertIn("Counterspell", html_body)
+
+
+
+class CubeExportTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", password="pass")
+        self.other = User.objects.create_user(username="other", password="pass")
+        self.closed_cube = Cube.objects.create(name="My Export Cube", owner=self.owner, max_cards=4)
+        self.closed_cube.participants.add(self.other)
+        Submission.objects.create(cube=self.closed_cube, player=self.owner, round_number=1, card_name="Lightning Bolt")
+        Submission.objects.create(cube=self.closed_cube, player=self.other, round_number=1, card_name="Counterspell")
+        Submission.objects.create(cube=self.closed_cube, player=self.owner, round_number=2, card_name="Lightning Bolt")
+        Submission.objects.create(cube=self.closed_cube, player=self.other, round_number=2, card_name="Opt")
+
+    def test_export_requires_login(self):
+        response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
+        self.assertRedirects(response, f"/accounts/login/?next=/cubes/{self.closed_cube.pk}/export/")
+
+    def test_export_returns_csv_for_complete_cube(self):
+        self.client.login(username="owner", password="pass")
+        response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertIn('attachment; filename="My Export Cube.csv"', response["Content-Disposition"])
+
+    def test_export_csv_contains_correct_quantities(self):
+        self.client.login(username="owner", password="pass")
+        response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
+
+        content = response.content.decode("utf-8")
+        lines = content.strip().splitlines()
+        self.assertEqual(lines[0], "quantity,card name")
+        # Rows are sorted alphabetically by card name
+        self.assertIn("1,Counterspell", lines)
+        self.assertIn("2,Lightning Bolt", lines)
+        self.assertIn("1,Opt", lines)
+
+    def test_export_redirects_for_open_cube(self):
+        open_cube = Cube.objects.create(name="Open Cube", owner=self.owner, max_cards=10)
+        Submission.objects.create(cube=open_cube, player=self.owner, round_number=1, card_name="Bolt")
+        self.client.login(username="owner", password="pass")
+
+        response = self.client.get(reverse("cube-export", kwargs={"pk": open_cube.pk}), follow=True)
+
+        self.assertRedirects(response, reverse("cube-detail", kwargs={"pk": open_cube.pk}))
+        self.assertContains(response, "only available when the cube is complete")
+
+    def test_export_not_accessible_to_non_participant(self):
+        outsider = User.objects.create_user(username="outsider", password="pass")
+        self.client.login(username="outsider", password="pass")
+
+        response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
+
+        self.assertEqual(response.status_code, 404)
