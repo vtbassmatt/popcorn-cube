@@ -47,11 +47,7 @@
         pendingController = controller;
         setLoading(true);
         try {
-          const searchTerms = [query, "in:paper"];
-          if (formatLegality) {
-            searchTerms.push("legal:" + formatLegality);
-          }
-          const params = new URLSearchParams({ q: searchTerms.join(" "), include_extras: "false" });
+          const params = new URLSearchParams({ q: query, include_extras: "false" });
           const response = await fetch(`${scryfallAutocompleteUrl}?${params}`, {
             headers: { Accept: "application/json" },
             signal: controller.signal,
