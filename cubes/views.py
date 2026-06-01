@@ -223,7 +223,7 @@ def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
         messages.error(request, "Cube export is only available when the cube is complete.")
         return redirect("cube-detail", pk=cube.pk)
 
-    card_names = cube.submissions.order_by("card_name").values_list("card_name", flat=True).iterator()
+    card_names = cube.submissions.order_by("card_name").values_list("card_name", flat=True).iterator(chunk_size=1000)
 
     filename = f"{cube.name}.txt"
     response = HttpResponse(content_type="text/plain")
@@ -232,7 +232,6 @@ def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
     safe_filename = re.sub(r'["\\/\r\n\t]', '_', filename)
     response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
 
-    for card_name in card_names:
-        response.write(f"{card_name}\n")
+    response.writelines(f"{card_name}\n" for card_name in card_names)
 
     return response
