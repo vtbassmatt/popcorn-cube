@@ -223,7 +223,7 @@ def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
         messages.error(request, "Cube export is only available when the cube is complete.")
         return redirect("cube-detail", pk=cube.pk)
 
-    card_names = cube.submissions.order_by("card_name").values_list("card_name", flat=True)
+    card_names = cube.submissions.order_by("card_name").values_list("card_name", flat=True).iterator()
 
     filename = f"{cube.name}.txt"
     response = HttpResponse(content_type="text/plain")
