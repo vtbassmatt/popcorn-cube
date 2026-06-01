@@ -1,4 +1,3 @@
-import csv
 import re
 from functools import partial
 
@@ -6,7 +5,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Count
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -225,22 +223,16 @@ def export_cube_csv(request: HttpRequest, pk: int) -> HttpResponse:
         messages.error(request, "Cube export is only available when the cube is complete.")
         return redirect("cube-detail", pk=cube.pk)
 
-    card_counts = (
-        cube.submissions.values("card_name")
-        .annotate(quantity=Count("card_name"))
-        .order_by("card_name")
-    )
+    card_names = cube.submissions.order_by("card_name").values_list("card_name", flat=True)
 
-    filename = f"{cube.name}.csv"
-    response = HttpResponse(content_type="text/csv")
+    filename = f"{cube.name}.txt"
+    response = HttpResponse(content_type="text/plain")
     # Sanitize filename: remove path separators, quotes, and control characters
     # that could be problematic in Content-Disposition headers or file systems.
     safe_filename = re.sub(r'["\\/\r\n\t]', '_', filename)
     response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
 
-    writer = csv.writer(response)
-    writer.writerow(["quantity", "card name"])
-    for entry in card_counts:
-        writer.writerow([entry["quantity"], entry["card_name"]])
+    for card_name in card_names:
+        response.write(f"{card_name}\n")
 
     return response

@@ -773,25 +773,21 @@ class CubeExportTests(TestCase):
         response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
         self.assertRedirects(response, f"/accounts/login/?next=/cubes/{self.closed_cube.pk}/export/")
 
-    def test_export_returns_csv_for_complete_cube(self):
+    def test_export_returns_text_file_for_complete_cube(self):
         self.client.login(username="owner", password="pass")
         response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/csv")
-        self.assertIn('attachment; filename="My Export Cube.csv"', response["Content-Disposition"])
+        self.assertEqual(response["Content-Type"], "text/plain")
+        self.assertIn('attachment; filename="My Export Cube.txt"', response["Content-Disposition"])
 
-    def test_export_csv_contains_correct_quantities(self):
+    def test_export_text_contains_one_card_per_line_with_duplicates(self):
         self.client.login(username="owner", password="pass")
         response = self.client.get(reverse("cube-export", kwargs={"pk": self.closed_cube.pk}))
 
         content = response.content.decode("utf-8")
         lines = content.strip().splitlines()
-        self.assertEqual(lines[0], "quantity,card name")
-        # Rows are sorted alphabetically by card name
-        self.assertIn("1,Counterspell", lines)
-        self.assertIn("2,Lightning Bolt", lines)
-        self.assertIn("1,Opt", lines)
+        self.assertEqual(lines, ["Counterspell", "Lightning Bolt", "Lightning Bolt", "Opt"])
 
     def test_export_redirects_for_open_cube(self):
         open_cube = Cube.objects.create(name="Open Cube", owner=self.owner, max_cards=10)
